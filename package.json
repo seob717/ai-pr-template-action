@@ -1,0 +1,31 @@
+{
+  "name": "ai-pr-template-action",
+  "version": "1.0.0",
+  "description": "Automatically generate PR templates using Claude AI based on git diff analysis",
+  "main": "pr-template-generator.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "github-action",
+    "pr-template",
+    "ai",
+    "claude",
+    "automation",
+    "pull-request"
+  ],
+  "author": "seob717",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seob717/ai-pr-template-action"
+  },
+  "bugs": {
+    "url": "https://github.com/seob717/ai-pr-template-action/issues"
+  },
+  "homepage": "https://github.com/seob717/ai-pr-template-action#readme"
+}

@@ -1,0 +1,133 @@
+name: 'AI PR Template Generator'
+description: 'Automatically generate and fill PR templates using Claude AI based on git diff analysis'
+author: 'seob717'
+
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key for Claude'
+    required: true
+  github-token:
+    description: 'GitHub token for PR operations'
+    required: true
+    default: ${{ github.token }}
+  template-path:
+    description: 'Path to PR templates directory relative to repository root'
+    required: false
+    default: '.github/pull_request_templates'
+  default-template:
+    description: 'Default template to use when auto-selection fails'
+    required: false
+    default: 'feature'
+
+outputs:
+  template-used:
+    description: 'The template that was selected and used'
+    value: ${{ steps.generate.outputs.template-used }}
+  content-generated:
+    description: 'Whether AI content was successfully generated (true/false)'
+    value: ${{ steps.generate.outputs.content-generated }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      shell: bash
+      run: |
+        npm install @anthropic-ai/sdk
+        
+    - name: Generate PR Template
+      shell: bash
+      id: generate
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        TEMPLATE_PATH: ${{ inputs.template-path }}
+        DEFAULT_TEMPLATE: ${{ inputs.default-template }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        node ${{ github.action_path }}/pr-template-generator.js
+        
+    - name: Update PR Description
+      if: steps.generate.outputs.content-generated == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        if [ -f pr-template-output.md ]; then
+          # Escape special characters for JSON
+          TEMPLATE_CONTENT=$(cat pr-template-output.md | jq -Rs .)
+          
+          # Update PR description using GitHub API
+          curl -X PATCH \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+            -d "{\"body\": $TEMPLATE_CONTENT}"
+            
+          echo "✅ PR description updated with AI-generated template"
+        fi
+        
+    - name: Add Success Comment
+      if: steps.generate.outputs.content-generated == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        COMMENT_BODY="🤖 **AI PR Template Generator**
+
+✅ Successfully generated PR template using **${{ steps.generate.outputs.template-used }}** template.
+
+The PR description has been automatically updated. Please review and modify as needed.
+
+---
+*Powered by Claude AI*"
+
+        # Escape for JSON
+        COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
+        
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+          -d "{\"body\": $COMMENT_JSON}"
+          
+    - name: Add Error Comment
+      if: steps.generate.outputs.content-generated != 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        COMMENT_BODY="🤖 **AI PR Template Generator**
+
+❌ Failed to generate PR template. Please check:
+- Anthropic API key is valid
+- There are actual changes in the PR
+- Template files exist in the specified path
+
+---
+*Powered by Claude AI*"
+
+        COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
+        
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+          -d "{\"body\": $COMMENT_JSON}"
+        
+    - name: Cleanup
+      shell: bash
+      run: |
+        rm -f pr-template-output.md
+
+branding:
+  icon: 'git-pull-request'
+  color: 'blue'

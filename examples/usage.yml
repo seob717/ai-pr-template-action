@@ -1,0 +1,37 @@
+# Example workflow file for using AI PR Template Generator
+# Place this in your repository at: .github/workflows/ai-pr-template.yml
+
+name: AI PR Template
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  generate-template:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          
+      # Basic usage
+      - name: Generate AI PR Template
+        uses: seob717/ai-pr-template-action@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      # Advanced usage with custom settings
+      # - name: Generate AI PR Template (Advanced)
+      #   uses: seob717/ai-pr-template-action@v1
+      #   with:
+      #     anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     template-path: 'docs/pr_templates'
+      #     default-template: 'enhancement'
