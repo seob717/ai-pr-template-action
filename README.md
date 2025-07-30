@@ -129,11 +129,18 @@ jobs:
 Choose your preferred AI provider and add the API key:
 
 #### 🏢 **Enterprise Options** (Secure for Corporate Code):
-- **🥇 Google Vertex AI** - Get service account key at [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-  - Add `VERTEX_AI_API_KEY` (service account JSON key)
-  - Add `GOOGLE_CLOUD_PROJECT_ID` (your GCP project ID)
-- **🥈 Claude Pro** - Get API key at [console.anthropic.com](https://console.anthropic.com)
-- **🥉 OpenAI Enterprise** - Enterprise tier at [platform.openai.com](https://platform.openai.com)
+
+**🥇 Google Vertex AI** (Recommended for Corporate Use):
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create or select a project
+3. Enable Vertex AI API: `gcloud services enable aiplatform.googleapis.com`
+4. Generate access token: `gcloud auth application-default print-access-token`
+5. Add GitHub Secrets:
+   - `VERTEX_AI_API_KEY`: Generated access token
+   - `GOOGLE_CLOUD_PROJECT_ID`: Your GCP project ID
+
+**🥈 Claude Pro** - Get API key at [console.anthropic.com](https://console.anthropic.com)
+**🥉 OpenAI Enterprise** - Enterprise tier at [platform.openai.com](https://platform.openai.com)
 
 #### 🆓 **Free Options** (Use caution with proprietary code):
 - **Groq**: Fast Llama 3.1 - Get free API key at [console.groq.com](https://console.groq.com)
@@ -142,24 +149,62 @@ Choose your preferred AI provider and add the API key:
 
 ## 📖 Usage
 
-### Basic Usage
+### 🏢 **Enterprise Usage** (Vertex AI - Recommended)
 
 ```yaml
 - name: Generate AI PR Template
-  uses: YOUR-USERNAME/ai-pr-template-action@v1
+  uses: seob717/ai-pr-template-action@main
   with:
-    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    ai-provider: 'vertex-ai'
+    api-key: ${{ secrets.VERTEX_AI_API_KEY }}
+    project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+    model: 'gemini-1.5-pro'
+    location: 'asia-northeast3'  # Seoul region
 ```
 
-### Advanced Usage
+### 🆓 **Free Usage Options**
+
+#### Groq (Fast & Free):
+```yaml
+- name: Generate AI PR Template
+  uses: seob717/ai-pr-template-action@main
+  with:
+    ai-provider: 'groq'
+    api-key: ${{ secrets.GROQ_API_KEY }}
+    model: 'llama-3.1-70b-versatile'
+```
+
+#### OpenAI:
+```yaml
+- name: Generate AI PR Template
+  uses: seob717/ai-pr-template-action@main
+  with:
+    ai-provider: 'openai'
+    api-key: ${{ secrets.OPENAI_API_KEY }}
+    model: 'gpt-4o-mini'
+```
+
+#### Google Gemini (Free tier):
+```yaml
+- name: Generate AI PR Template
+  uses: seob717/ai-pr-template-action@main
+  with:
+    ai-provider: 'google'
+    api-key: ${{ secrets.GOOGLE_API_KEY }}
+    model: 'gemini-1.5-flash'
+```
+
+### 🔧 **Advanced Configuration**
 
 ```yaml
 - name: Generate AI PR Template
-  uses: YOUR-USERNAME/ai-pr-template-action@v1
+  uses: seob717/ai-pr-template-action@main
   with:
-    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    ai-provider: 'vertex-ai'
+    api-key: ${{ secrets.VERTEX_AI_API_KEY }}
+    project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+    model: 'gemini-1.5-pro'
+    location: 'us-central1'
     template-path: 'docs/pr_templates'  # Custom template path
     default-template: 'enhancement'     # Custom default template
 ```
@@ -170,10 +215,21 @@ Choose your preferred AI provider and add the API key:
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `anthropic-api-key` | Anthropic API key for Claude | ✅ | - |
-| `github-token` | GitHub token for PR operations | ✅ | `${{ github.token }}` |
+| `ai-provider` | AI provider: `claude`, `openai`, `google`, `vertex-ai`, `groq` | ❌ | `claude` |
+| `api-key` | API key for the selected AI provider | ✅ | - |
+| `project-id` | Google Cloud Project ID (required for Vertex AI) | ❌ | - |
+| `location` | Google Cloud region (for Vertex AI) | ❌ | `us-central1` |
+| `model` | Specific model to use | ❌ | Provider default |
 | `template-path` | Path to PR templates directory | ❌ | `.github/pull_request_templates` |
 | `default-template` | Default template when auto-selection fails | ❌ | `feature` |
+| `github-token` | GitHub token for PR operations | ❌ | `${{ github.token }}` |
+
+### Legacy Inputs (Deprecated)
+| Input | Description | Status |
+|-------|-------------|---------|
+| `anthropic-api-key` | Use `api-key` instead | ⚠️ Deprecated |
+| `openai-api-key` | Use `api-key` instead | ⚠️ Deprecated |
+| `google-api-key` | Use `api-key` instead | ⚠️ Deprecated |
 
 ### Outputs
 
@@ -291,11 +347,64 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - 🐛 [Report Issues](https://github.com/seob717/ai-pr-template-action/issues)
 - 💬 [Discussions](https://github.com/seob717/ai-pr-template-action/discussions)
 
-## 🌟 Examples
+## 🌟 **Available AI Models**
 
-Check out these example repositories using this action:
-- [Example Repo 1](https://github.com/example/repo1)
-- [Example Repo 2](https://github.com/example/repo2)
+### Enterprise Models (High Quality):
+- **Vertex AI**: `gemini-1.5-pro`, `gemini-1.5-flash`
+- **Claude**: `claude-3-5-sonnet-20241022`, `claude-3-haiku-20240307`
+- **OpenAI**: `gpt-4o`, `gpt-4o-mini`
+
+### Free Models:
+- **Groq**: `llama-3.1-70b-versatile`, `llama-3.1-8b-instant`
+- **Google**: `gemini-1.5-flash`
+- **OpenAI**: `gpt-4o-mini` (limited free tier)
+
+### Supported Regions (Vertex AI):
+- `us-central1` (Iowa)
+- `us-east1` (South Carolina) 
+- `us-west1` (Oregon)
+- `europe-west1` (Belgium)
+- `asia-northeast1` (Tokyo)
+- `asia-northeast3` (Seoul) 🇰🇷
+- `asia-southeast1` (Singapore)
+
+## 🚀 **Complete Example**
+
+`.github/workflows/ai-pr-template.yml`:
+```yaml
+name: AI PR Template Generator
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited]
+
+jobs:
+  generate-pr-template:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          
+      - name: Generate AI PR Template
+        uses: seob717/ai-pr-template-action@main
+        with:
+          # Enterprise setup (secure for corporate code)
+          ai-provider: 'vertex-ai'
+          api-key: ${{ secrets.VERTEX_AI_API_KEY }}
+          project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+          model: 'gemini-1.5-pro'
+          location: 'asia-northeast3'  # Seoul
+          
+          # Optional customization
+          template-path: '.github/pull_request_templates'
+          default-template: 'feature'
+```
 
 ---
 
