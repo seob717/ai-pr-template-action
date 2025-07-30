@@ -1,0 +1,17 @@
+# IDE and dependency files
+.idea/
+node_modules/
+*.lock
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+pr-template-output.md
