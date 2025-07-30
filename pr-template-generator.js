@@ -39,6 +39,11 @@ class PRTemplateGenerator {
     this.aiProvider = process.env.AI_PROVIDER || 'claude';
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
+    
+    // API 키 검증
+    if (!this.apiKey) {
+      console.log('⚠️ No API key found. Will use basic template without AI generation.');
+    }
   }
 
   // API 키 가져오기 (우선순위: api-key > 개별 키)
@@ -410,17 +415,22 @@ Based on the above information, please fill in each section of the PR template.
       const template = this.readTemplate(templateName);
       
       // 4. AI로 내용 생성
-      console.log('🧠 Claude로 내용 생성 중...');
-      const generatedContent = await this.generateContent(diff, changedFiles, template);
+      let generatedContent = null;
+      let filledTemplate = template;
       
-      if (!generatedContent) {
-        console.error('❌ 내용 생성에 실패했습니다.');
-        this.setOutput('content-generated', 'false');
-        return;
+      if (this.apiKey) {
+        console.log('🧠 AI로 내용 생성 중...');
+        generatedContent = await this.generateContent(diff, changedFiles, template);
+        
+        if (generatedContent) {
+          // 5. 템플릿 채우기
+          filledTemplate = this.fillTemplate(template, generatedContent);
+        } else {
+          console.log('⚠️ AI 생성 실패, 기본 템플릿을 사용합니다.');
+        }
+      } else {
+        console.log('ℹ️ API 키가 없어서 기본 템플릿을 사용합니다.');
       }
-      
-      // 5. 템플릿 채우기
-      const filledTemplate = this.fillTemplate(template, generatedContent);
       
       // 6. 파일로 저장 (GitHub Action에서 사용)
       fs.writeFileSync('pr-template-output.md', filledTemplate);
