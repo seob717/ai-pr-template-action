@@ -81,13 +81,13 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         COMMENT_BODY="🤖 **AI PR Template Generator**
-
-✅ Successfully generated PR template using **${{ steps.generate.outputs.template-used }}** template.
-
-The PR description has been automatically updated. Please review and modify as needed.
-
----
-*Powered by Claude AI*"
+        
+        ✅ Successfully generated PR template using **${{ steps.generate.outputs.template-used }}** template.
+        
+        The PR description has been automatically updated. Please review and modify as needed.
+        
+        ---
+        *Powered by Claude AI*"
 
         # Escape for JSON
         COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
@@ -106,14 +106,14 @@ The PR description has been automatically updated. Please review and modify as n
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         COMMENT_BODY="🤖 **AI PR Template Generator**
-
-❌ Failed to generate PR template. Please check:
-- Anthropic API key is valid
-- There are actual changes in the PR
-- Template files exist in the specified path
-
----
-*Powered by Claude AI*"
+        
+        ❌ Failed to generate PR template. Please check:
+        - Anthropic API key is valid
+        - There are actual changes in the PR
+        - Template files exist in the specified path
+        
+        ---
+        *Powered by Claude AI*"
 
         COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
         
