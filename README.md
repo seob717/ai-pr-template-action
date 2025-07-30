@@ -32,6 +32,7 @@ Use **Vertex AI with gemini-1.5-pro** for the best balance of security, performa
 - **🎯 Customizable Templates**: Support for multiple PR template types (feature, hotfix, release, bugfix)
 - **⚡ Zero Configuration**: Works out of the box with sensible defaults
 - **🔧 Highly Configurable**: Customize AI providers, models, template paths, and more
+- **🧩 Advanced Customization**: Use `pr-rules.json` to extract information like Jira tickets from commit messages and branch names.
 
 ## 🚀 Quick Start
 
@@ -58,6 +59,10 @@ Example `feature.md`:
 
 <!-- AI will fill this automatically -->
 
+## Jira Tickets
+
+-
+
 ## 🧪 Testing
 
 <!-- AI will fill this automatically -->
@@ -67,7 +72,23 @@ Example `feature.md`:
 <!-- AI will fill this automatically -->
 ```
 
-### 2. Set up the Workflow
+### 2. (Optional) Create Custom Rules
+
+Create a `.github/pr-rules.json` file to define custom rules for extracting information from commit messages and branch names.
+
+Example for extracting Jira tickets:
+```json
+{
+  "rules": [
+    {
+      "pattern": "(DD-\\d+)",
+      "targetSection": "## Jira Tickets"
+    }
+  ]
+}
+```
+
+### 3. Set up the Workflow
 
 Create `.github/workflows/ai-pr-template.yml`:
 
@@ -91,7 +112,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0 # Fetch all history for commit messages
           
       # Enterprise-grade Vertex AI (Secure & High Performance)
       - name: Generate AI PR Template
@@ -124,7 +145,7 @@ jobs:
       #     model: 'gemini-1.5-flash'
 ```
 
-### 3. Add API Key
+### 4. Add API Key
 
 Choose your preferred AI provider and add the API key:
 

@@ -1,25 +1,19 @@
 ## 🎯 Feature Description
 
-<!-- Brief description of the new feature -->
+<!-- AI가 자동으로 채워줍니다 -->
 
 ## 🔄 Changes Made
 
-- <!-- AI-generated list of changes -->
+<!-- AI가 자동으로 채워줍니다 -->
+
+## Jira Tickets
+
+-
 
 ## 🧪 Testing
 
-- [ ] Unit tests added
-- [ ] Integration tests updated  
 - [ ] Manual testing completed
 
 ## 📝 Notes for Reviewers
 
-<!-- AI-generated reviewer guidance -->
-
-## 📱 Screenshots/Demo
-
-<!-- Add screenshots or demo videos if applicable -->
-
-## 🔗 Related Issues
-
-- Closes #<!-- issue number -->
+<!-- AI가 자동으로 채워줍니다 -->

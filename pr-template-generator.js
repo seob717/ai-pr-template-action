@@ -35,12 +35,12 @@ class PRTemplateGenerator {
     this.templateDir = process.env.TEMPLATE_PATH
       ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
       : path.join(process.cwd(), ".github", "pull_request_templates");
-
+    this.rulesPath = path.join(process.cwd(), ".github", "pr-rules.json");
     this.aiProvider = process.env.AI_PROVIDER || "claude";
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
+    this.rules = this.loadRules();
 
-    // API 키 검증
     if (!this.apiKey) {
       console.log(
         "⚠️ No API key found. Will use basic template without AI generation."
@@ -82,6 +82,41 @@ class PRTemplateGenerator {
     };
 
     return defaultModels[this.aiProvider] || defaultModels.claude;
+  }
+
+  // 규칙 파일 로드
+  loadRules() {
+    if (fs.existsSync(this.rulesPath)) {
+      try {
+        const content = fs.readFileSync(this.rulesPath, "utf8");
+        return JSON.parse(content).rules || [];
+      } catch (error) {
+        console.error("규칙 파일 로드 또는 파싱 실패:", error.message);
+        return [];
+      }
+    }
+    return [];
+  }
+
+  // 관련 Git 커밋 메시지 가져오기
+  getGitCommitMessages() {
+    try {
+      const mainBranch = "main"; // 또는 'master'
+      const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", {
+        encoding: "utf8",
+      }).trim();
+      const ancestor = execSync(
+        `git merge-base ${mainBranch} ${currentBranch}`,
+        { encoding: "utf8" }
+      ).trim();
+      return execSync(`git log ${ancestor}..${currentBranch} --pretty=%B`, {
+        encoding: "utf8",
+      }).trim();
+    } catch (error) {
+      console.warn("커밋 메시지를 가져오는 데 실패했습니다:", error.message);
+      // fallback: 마지막 커밋 메시지만 가져오기
+      return execSync("git log -1 --pretty=%B", { encoding: "utf8" }).trim();
+    }
   }
 
   // Git diff 분석
@@ -181,20 +216,29 @@ class PRTemplateGenerator {
   }
 
   // AI API로 내용 생성 (다중 제공자 지원)
-  async generateContent(diff, changedFiles, template) {
+  async generateContent(diff, changedFiles, template, extractedInfo = {}) {
+    const extractedInfoString = Object.entries(extractedInfo)
+      .map(
+        ([key, values]) =>
+          `${key}: ${Array.isArray(values) ? values.join(", ") : values}`
+      )
+      .join("\n");
+
     const systemPrompt = `You are an AI assistant that automatically generates Pull Request descriptions from git diffs.
-Your task is to fill out the provided PR template in Korean based on the code changes.
+Your task is to fill out the provided PR template in Korean based on the code changes and any additional context.
 
 Instructions:
 1.  **Analyze the Changes**: Carefully review the git diff and the list of changed files.
-2.  **Fill the Template**: Populate each section of the PR template with concise and clear descriptions.
-3.  **Replace Placeholders**: Replace every \`<!-- AI가 자동으로 채워줍니다 -->\` placeholder with relevant content.
-4.  **Handle Non-applicable Sections**: If a section is not relevant to the changes, write "해당 없음".
-5.  **Estimate Review Time**: If the template includes "예상 리뷰 소요 시간" (Estimated review time), provide a realistic estimate (e.g., 5분, 15분, 30분) based on the complexity of the changes.
-6.  **Suggest Deadline**: If there's a "희망 리뷰 마감 기한" (Desired review deadline), suggest a reasonable deadline (e.g., 내일 오전, 금요일까지).
-7.  **Maintain Structure**: Preserve the original Markdown formatting of the template.`;
+2.  **Use Provided Context**: Incorporate the following extracted information into the relevant sections of the template.
+    \`\`\`
+    ${extractedInfoString}
+    \`\`\`
+3.  **Fill the Template**: Populate each section of the PR template with concise and clear descriptions.
+4.  **Replace Placeholders**: Replace every \`<!-- AI가 자동으로 채워줍니다 -->\` placeholder with relevant content.
+5.  **Handle Non-applicable Sections**: If a section is not relevant to the changes, write "해당 없음".
+6.  **Maintain Structure**: Preserve the original Markdown formatting of the template.`;
 
-    const userPrompt = `Please fill out the following PR template based on the provided git diff.
+    const userPrompt = `Please fill out the following PR template based on the provided git diff and context.
 
 **Changed Files:**
 \`\`\`
@@ -351,20 +395,59 @@ ${template}
   }
 
   // 템플릿에 생성된 내용 적용
-  fillTemplate(template, generatedContent) {
-    if (!generatedContent) {
-      return template; // AI 생성 실패시 원본 템플릿 반환
+  fillTemplate(template, generatedContent, extractedInfo) {
+    let filledTemplate = template;
+
+    // 1. AI가 생성한 내용 적용 (플레이스홀더 교체)
+    if (generatedContent) {
+      const cleanedContent = generatedContent.replace(/---/g, "").trim();
+      filledTemplate = cleanedContent.replace(
+        /<!-- AI가 자동으로 채워줍니다 -->/g,
+        "해당 없음"
+      );
     }
 
-    // AI가 생성한 내용에서 템플릿 시작/끝 구분선을 제거할 수 있습니다.
-    const cleanedContent = generatedContent.replace(/---/g, "").trim();
+    // 2. 규칙 기반으로 추출된 정보 적용
+    for (const rule of this.rules) {
+      const { pattern, targetSection } = rule;
+      const key = pattern; // 패턴을 키로 사용
+      if (extractedInfo[key] && extractedInfo[key].length > 0) {
+        const targetRegex = new RegExp(`(${targetSection})`, "i");
+        if (targetRegex.test(filledTemplate)) {
+          const items = extractedInfo[key]
+            .map((item) => `- ${item}`)
+            .join("\n");
+          filledTemplate = filledTemplate.replace(targetRegex, `$1\n${items}`);
+        }
+      }
+    }
 
-    // AI가 이미 전체 템플릿을 채워서 반환하므로, 그 내용을 사용합니다.
-    // 만약 AI가 플레이스홀더를 남겨두었다면, 안전하게 처리합니다.
-    return cleanedContent.replace(
-      /<!-- AI가 자동으로 채워줍니다 -->/g,
-      "해당 없음"
-    );
+    return filledTemplate;
+  }
+
+  // 규칙에 따라 정보 추출
+  extractInfoByRules(commitMessages, branchName) {
+    const extractedInfo = {};
+    if (this.rules.length === 0) return extractedInfo;
+
+    const sources = [commitMessages, branchName].join("\n");
+
+    for (const rule of this.rules) {
+      const { pattern, targetSection } = rule;
+      const regex = new RegExp(pattern, "g");
+      const matches = sources.match(regex) || [];
+      const uniqueMatches = [...new Set(matches)];
+
+      if (uniqueMatches.length > 0) {
+        // pattern을 키로 사용하여 저장
+        if (!extractedInfo[pattern]) {
+          extractedInfo[pattern] = [];
+        }
+        extractedInfo[pattern].push(...uniqueMatches);
+      }
+    }
+
+    return extractedInfo;
   }
 
   // 메인 실행 함수
@@ -374,23 +457,32 @@ ${template}
       console.log(`📡 AI Provider: ${this.aiProvider}`);
       console.log(`🎯 Model: ${this.model}`);
 
-      // 1. Git diff 분석
+      // 1. Git diff 및 커밋 정보 분석
       const { diff, changedFiles } = this.getGitDiff();
+      const commitMessages = this.getGitCommitMessages();
+      const branchName = execSync("git branch --show-current", {
+        encoding: "utf8",
+      }).trim();
+
       if (!diff && changedFiles.length === 0) {
         console.log("변경사항이 없습니다.");
         this.setOutput("content-generated", "false");
         return;
       }
 
-      // 2. 템플릿 선택
+      // 2. 규칙 기반 정보 추출
+      const extractedInfo = this.extractInfoByRules(commitMessages, branchName);
+      console.log("🔍 추출된 정보:", JSON.stringify(extractedInfo, null, 2));
+
+      // 3. 템플릿 선택
       const templateName = this.selectTemplate();
       console.log(`📋 선택된 템플릿: ${templateName}`);
       this.setOutput("template-used", templateName);
 
-      // 3. 템플릿 읽기
+      // 4. 템플릿 읽기
       const template = this.readTemplate(templateName);
 
-      // 4. AI로 내용 생성
+      // 5. AI로 내용 생성
       let generatedContent = null;
       let filledTemplate = template;
 
@@ -399,20 +491,21 @@ ${template}
         generatedContent = await this.generateContent(
           diff,
           changedFiles,
-          template
+          template,
+          extractedInfo
         );
-
-        if (generatedContent) {
-          // 5. 템플릿 채우기
-          filledTemplate = this.fillTemplate(template, generatedContent);
-        } else {
-          console.log("⚠️ AI 생성 실패, 기본 템플릿을 사용합니다.");
-        }
       } else {
         console.log("ℹ️ API 키가 없어서 기본 템플릿을 사용합니다.");
       }
 
-      // 6. 파일로 저장 (GitHub Action에서 사용)
+      // 6. 템플릿 채우기
+      filledTemplate = this.fillTemplate(
+        template,
+        generatedContent,
+        extractedInfo
+      );
+
+      // 7. 파일로 저장
       fs.writeFileSync("pr-template-output.md", filledTemplate);
       this.setOutput("content-generated", "true");
 
