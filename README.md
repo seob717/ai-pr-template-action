@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # No fetch-depth needed - uses GitHub API for commit info
+        # No fetch-depth needed - uses GitHub API for both commits and diff
 
       - name: Generate AI PR Template
         id: ai-pr-template
@@ -422,7 +422,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # Default fetch-depth: 1 is sufficient
+        # Default fetch-depth: 1 is sufficient - uses GitHub API for diff
 
       - name: Generate AI PR Template
         id: ai-pr-template

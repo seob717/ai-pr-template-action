@@ -193,8 +193,61 @@ class PRTemplateGenerator {
     }
   }
 
-  // Git diff 분석
-  getGitDiff() {
+  // Git diff 분석 (GitHub API 우선, 로컬 Git 폴백)
+  async getGitDiff() {
+    // GitHub API를 통한 diff 가져오기 시도
+    if (this.octokit && github.context.payload.pull_request) {
+      try {
+        console.log("GitHub API를 통해 PR diff를 가져옵니다.");
+        const { owner, repo } = github.context.repo;
+        const pull_number = github.context.payload.pull_request.number;
+
+        // PR의 파일 목록과 변경사항 가져오기
+        const files = await this.octokit.paginate(
+          this.octokit.rest.pulls.listFiles,
+          {
+            owner,
+            repo,
+            pull_number,
+          }
+        );
+
+        // 변경된 파일 목록 생성
+        const changedFiles = files
+          .filter((file) => file.status !== "removed")
+          .map((file) => file.filename);
+
+        // unified diff 형식으로 변환
+        let diff = "";
+        for (const file of files) {
+          if (file.patch) {
+            diff += `diff --git a/${file.filename} b/${file.filename}\n`;
+            diff += `index ${file.sha}..${file.sha} 100644\n`;
+            diff += `--- a/${file.filename}\n`;
+            diff += `+++ b/${file.filename}\n`;
+            diff += file.patch + "\n";
+          }
+        }
+
+        console.log(
+          `GitHub API로 ${files.length}개 파일의 변경사항을 가져왔습니다.`
+        );
+        return { diff, changedFiles };
+      } catch (error) {
+        console.warn(
+          "GitHub API로 diff 가져오기 실패, 로컬 Git으로 대체:",
+          error.message
+        );
+        return this.getGitDiffFromLocal();
+      }
+    } else {
+      console.log("로컬 Git에서 diff를 가져옵니다.");
+      return this.getGitDiffFromLocal();
+    }
+  }
+
+  // 로컬 Git을 통한 diff 가져오기 (폴백)
+  getGitDiffFromLocal() {
     try {
       let diffCommand, nameOnlyCommand;
 
@@ -204,12 +257,12 @@ class PRTemplateGenerator {
         const headSha = github.context.payload.pull_request.head.sha;
         diffCommand = `git diff ${baseSha}..${headSha}`;
         nameOnlyCommand = `git diff --name-only ${baseSha}..${headSha}`;
-        console.log(`PR diff: ${baseSha}..${headSha}`);
+        console.log(`로컬 Git PR diff: ${baseSha}..${headSha}`);
       } else {
         // 로컬 실행 시 폴백
         diffCommand = "git diff HEAD~1..HEAD";
         nameOnlyCommand = "git diff --name-only HEAD~1..HEAD";
-        console.log("로컬 diff: HEAD~1..HEAD");
+        console.log("로컬 Git diff: HEAD~1..HEAD");
       }
 
       const diff = execSync(diffCommand, { encoding: "utf8" });
@@ -221,7 +274,7 @@ class PRTemplateGenerator {
 
       return { diff, changedFiles };
     } catch (error) {
-      console.error("Git diff 분석 실패:", error.message);
+      console.error("로컬 Git diff 분석 실패:", error.message);
       return { diff: "", changedFiles: [] };
     }
   }
@@ -533,7 +586,7 @@ ${template}
       console.log(`🎯 Model: ${this.model}`);
 
       // 1. Git diff 분석
-      const { diff, changedFiles } = this.getGitDiff();
+      const { diff, changedFiles } = await this.getGitDiff();
       if (!diff && changedFiles.length === 0) {
         console.log("변경사항이 없습니다.");
         this.setOutput("content-generated", "false");
