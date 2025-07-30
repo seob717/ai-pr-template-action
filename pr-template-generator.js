@@ -520,17 +520,19 @@ ${template}
   // 템플릿에 규칙 기반 정보 적용
   applyRulesToTemplate(template, extractedInfo) {
     let filledTemplate = template;
+
     for (const rule of this.rules) {
       const { pattern, targetSection } = rule;
       const key = pattern; // 패턴을 키로 사용
+
       if (extractedInfo[key] && extractedInfo[key].length > 0) {
         const items = extractedInfo[key].map((item) => `- ${item}`).join("\n");
         const sectionRegex = new RegExp(`(${targetSection})`, "i");
 
         if (sectionRegex.test(filledTemplate)) {
-          // 섹션이 이미 존재하면, placeholder를 교체하거나 바로 아래에 추가합니다.
+          // 섹션이 이미 존재하면, placeholder와 "해당 없음"을 모두 교체
           const placeholderRegex = new RegExp(
-            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-)`,
+            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-|해당\\s*없음)`,
             "i"
           );
           if (placeholderRegex.test(filledTemplate)) {
@@ -547,6 +549,21 @@ ${template}
         } else {
           // 섹션이 없으면 템플릿 끝에 추가합니다.
           filledTemplate += `\n\n${targetSection}\n${items}`;
+        }
+      } else {
+        // 추출된 정보가 없으면 "해당 없음"으로 표시
+        const sectionRegex = new RegExp(`(${targetSection})`, "i");
+        if (sectionRegex.test(filledTemplate)) {
+          const placeholderRegex = new RegExp(
+            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-)`,
+            "i"
+          );
+          if (placeholderRegex.test(filledTemplate)) {
+            filledTemplate = filledTemplate.replace(
+              placeholderRegex,
+              `$1해당 없음\n`
+            );
+          }
         }
       }
     }
