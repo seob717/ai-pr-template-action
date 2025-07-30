@@ -3,6 +3,7 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
+import * as github from "@actions/github";
 
 // AI Provider imports
 let Anthropic, OpenAI, GoogleGenerativeAI, Groq;
@@ -49,6 +50,11 @@ class PRTemplateGenerator {
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
     this.rules = this.loadRules();
+
+    this.githubToken = process.env.GITHUB_TOKEN;
+    if (this.githubToken) {
+      this.octokit = github.getOctokit(this.githubToken);
+    }
 
     if (!this.apiKey) {
       console.log(
@@ -133,7 +139,7 @@ class PRTemplateGenerator {
   }
 
   // 관련 Git 커밋 메시지 가져오기
-  getGitCommitMessages() {
+  getCommitMessagesFromLocalGit() {
     try {
       const mainBranch = "main"; // 또는 'master'
       const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", {
@@ -147,17 +153,67 @@ class PRTemplateGenerator {
         encoding: "utf8",
       }).trim();
     } catch (error) {
-      console.warn("커밋 메시지를 가져오는 데 실패했습니다:", error.message);
+      console.warn(
+        "로컬 Git에서 커밋 메시지를 가져오는 데 실패했습니다:",
+        error.message
+      );
       // fallback: 마지막 커밋 메시지만 가져오기
       return execSync("git log -1 --pretty=%B", { encoding: "utf8" }).trim();
+    }
+  }
+
+  // GitHub API 또는 로컬 Git을 통해 커밋 메시지 가져오기
+  async getCommitMessages() {
+    if (this.octokit && github.context.payload.pull_request) {
+      try {
+        console.log("GitHub API를 통해 PR의 커밋 목록을 가져옵니다.");
+        const { owner, repo } = github.context.repo;
+        const pull_number = github.context.payload.pull_request.number;
+
+        const commits = await this.octokit.paginate(
+          this.octokit.rest.pulls.listCommits,
+          {
+            owner,
+            repo,
+            pull_number,
+          }
+        );
+
+        return commits.map((commit) => commit.commit.message).join("\n");
+      } catch (error) {
+        console.warn(
+          "GitHub API 호출 실패, 로컬 Git으로 대체합니다:",
+          error.message
+        );
+        return this.getCommitMessagesFromLocalGit();
+      }
+    } else {
+      console.log("로컬 Git에서 커밋 메시지를 가져옵니다.");
+      return this.getCommitMessagesFromLocalGit();
     }
   }
 
   // Git diff 분석
   getGitDiff() {
     try {
-      const diff = execSync("git diff HEAD~1..HEAD", { encoding: "utf8" });
-      const changedFiles = execSync("git diff --name-only HEAD~1..HEAD", {
+      let diffCommand, nameOnlyCommand;
+
+      // GitHub Actions PR 컨텍스트에서 정확한 diff 가져오기
+      if (github.context.payload.pull_request) {
+        const baseSha = github.context.payload.pull_request.base.sha;
+        const headSha = github.context.payload.pull_request.head.sha;
+        diffCommand = `git diff ${baseSha}..${headSha}`;
+        nameOnlyCommand = `git diff --name-only ${baseSha}..${headSha}`;
+        console.log(`PR diff: ${baseSha}..${headSha}`);
+      } else {
+        // 로컬 실행 시 폴백
+        diffCommand = "git diff HEAD~1..HEAD";
+        nameOnlyCommand = "git diff --name-only HEAD~1..HEAD";
+        console.log("로컬 diff: HEAD~1..HEAD");
+      }
+
+      const diff = execSync(diffCommand, { encoding: "utf8" });
+      const changedFiles = execSync(nameOnlyCommand, {
         encoding: "utf8",
       })
         .split("\n")
@@ -509,7 +565,7 @@ ${template}
       }
 
       // 4. 규칙 기반 정보 추출 및 최종 템플릿에 적용
-      const commitMessages = this.getGitCommitMessages();
+      const commitMessages = await this.getCommitMessages();
       const branchName = execSync("git branch --show-current", {
         encoding: "utf8",
       }).trim();

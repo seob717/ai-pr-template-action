@@ -82,16 +82,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Fetch all history to enable rule-based info extraction from commits
-          fetch-depth: 0
+        # No fetch-depth needed - uses GitHub API for commit info
 
       - name: Generate AI PR Template
+        id: ai-pr-template
         uses: seob717/ai-pr-template-action@v1
         with:
           ai-provider: "groq"
           api-key: ${{ secrets.GROQ_API_KEY }}
           model: "llama-3.1-70b-versatile"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR Body
+        if: steps.ai-pr-template.outputs.content-generated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prBody = fs.readFileSync('pr-template-output.md', 'utf8');
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: prBody
+            });
 ```
 
 ### 3. Add API Key
@@ -219,7 +234,7 @@ To automatically extract and place information like Jira tickets, create a `.git
 | `model`            | Specific model to use                                          | ❌       | Provider default                 |
 | `template-path`    | Path to PR templates directory                                 | ❌       | `.github/pull_request_templates` |
 | `default-template` | Default template when auto-selection fails                     | ❌       | `feature`                        |
-| `github-token`     | GitHub token for PR operations                                 | ❌       | `${{ github.token }}`            |
+| `github-token`     | GitHub token for API requests and PR updates                   | ✅       | `${{ secrets.GITHUB_TOKEN }}`    |
 
 ### Legacy Inputs (Deprecated)
 
@@ -407,10 +422,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
+        # Default fetch-depth: 1 is sufficient
 
       - name: Generate AI PR Template
+        id: ai-pr-template
         uses: seob717/ai-pr-template-action@main
         with:
           # Enterprise setup (secure for corporate code)
@@ -419,10 +434,26 @@ jobs:
           project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
           model: "gemini-1.5-pro"
           location: "asia-northeast3" # Seoul
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
           # Optional customization
           template-path: ".github/pull_request_templates"
           default-template: "feature"
+
+      - name: Update PR Body
+        if: steps.ai-pr-template.outputs.content-generated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prBody = fs.readFileSync('pr-template-output.md', 'utf8');
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: prBody
+            });
 ```
 
 ---
