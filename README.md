@@ -7,9 +7,26 @@ Automatically generate and fill PR templates using multiple AI providers based o
 
 **🆓 Free tier support for multiple AI providers!**
 
+## 🔒 **Security & Privacy for Enterprise Use**
+
+⚠️ **Important**: When using this action with proprietary code, consider data privacy policies:
+
+### 🏢 **Enterprise-Safe Options** (Code NOT used for training):
+- **✅ Google Vertex AI** - Enterprise-grade, GDPR compliant, data stays in your region
+- **✅ Claude Pro (Anthropic)** - Explicit no-training policy
+- **✅ OpenAI Enterprise** - Business tier with data protection
+
+### ⚠️ **Caution Required** (May use data for training):
+- **🔶 OpenAI Free/Standard** - May use data for model improvement
+- **🔶 Google AI Studio (Free)** - May use data for quality improvement
+- **🔶 Groq/Hugging Face** - Check their data policies
+
+### 🛡️ **Recommendation for Corporate Use**:
+Use **Vertex AI with gemini-1.5-pro** for the best balance of security, performance, and cost.
+
 ## ✨ Features
 
-- **🤖 Multiple AI Providers**: Support for Claude, OpenAI, Google Gemini, Groq, and Hugging Face
+- **🤖 Multiple AI Providers**: Support for Claude, OpenAI, Google Gemini, Vertex AI, Groq, and Hugging Face
 - **🆓 Free Tier Support**: Use free models like GPT-4o-mini, Gemini Flash, Llama 3.1, etc.
 - **📋 Smart Template Selection**: Automatically selects appropriate templates based on branch names or commit messages
 - **🎯 Customizable Templates**: Support for multiple PR template types (feature, hotfix, release, bugfix)
@@ -54,7 +71,7 @@ Example `feature.md`:
 
 Create `.github/workflows/ai-pr-template.yml`:
 
-#### 🆓 Using Free Models
+#### 🏢 **Enterprise Setup** (Recommended for Corporate Use)
 
 ```yaml
 name: AI PR Template
@@ -76,12 +93,27 @@ jobs:
         with:
           fetch-depth: 2
           
+      # Enterprise-grade Vertex AI (Secure & High Performance)
+      - name: Generate AI PR Template
+        uses: seob717/ai-pr-template-action@v1
+        with:
+          ai-provider: 'vertex-ai'
+          api-key: ${{ secrets.VERTEX_AI_API_KEY }}
+          project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+          model: 'gemini-1.5-pro'  # High performance model
+          location: 'us-central1'  # Or your preferred region
+```
+
+#### 🆓 **Free Tier Setup**
+
+```yaml
       # Using Groq (Free Llama 3.1)
       - name: Generate AI PR Template
         uses: seob717/ai-pr-template-action@v1
         with:
           ai-provider: 'groq'
           api-key: ${{ secrets.GROQ_API_KEY }}
+          model: 'llama-3.1-70b-versatile'  # High performance free model
           
       # Or using Google Gemini (Free tier)
       # - name: Generate AI PR Template
@@ -96,13 +128,17 @@ jobs:
 
 Choose your preferred AI provider and add the API key:
 
-#### 🆓 **Free Options** (Recommended):
+#### 🏢 **Enterprise Options** (Secure for Corporate Code):
+- **🥇 Google Vertex AI** - Get service account key at [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+  - Add `VERTEX_AI_API_KEY` (service account JSON key)
+  - Add `GOOGLE_CLOUD_PROJECT_ID` (your GCP project ID)
+- **🥈 Claude Pro** - Get API key at [console.anthropic.com](https://console.anthropic.com)
+- **🥉 OpenAI Enterprise** - Enterprise tier at [platform.openai.com](https://platform.openai.com)
+
+#### 🆓 **Free Options** (Use caution with proprietary code):
 - **Groq**: Fast Llama 3.1 - Get free API key at [console.groq.com](https://console.groq.com)
 - **Google Gemini**: Free tier available - Get API key at [makersuite.google.com](https://makersuite.google.com)
 - **OpenAI**: GPT-4o-mini has generous free tier - Get API key at [platform.openai.com](https://platform.openai.com)
-
-#### 💰 **Paid Options**:
-- **Claude**: High quality responses - Get API key at [console.anthropic.com](https://console.anthropic.com)
 
 ## 📖 Usage
 

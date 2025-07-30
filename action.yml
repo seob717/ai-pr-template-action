@@ -4,7 +4,7 @@ author: 'seob717'
 
 inputs:
   ai-provider:
-    description: 'AI provider to use (claude, openai, google, groq, huggingface)'
+    description: 'AI provider to use (claude, openai, google, vertex-ai, groq, huggingface)'
     required: false
     default: 'claude'
   api-key:
@@ -19,6 +19,9 @@ inputs:
   google-api-key:
     description: 'Google API key for Gemini (deprecated, use api-key)'
     required: false
+  vertex-ai-api-key:
+    description: 'Google Vertex AI API key (deprecated, use api-key)'
+    required: false
   github-token:
     description: 'GitHub token for PR operations'
     required: true
@@ -32,8 +35,15 @@ inputs:
     required: false
     default: 'feature'
   model:
-    description: 'Specific model to use (e.g., gpt-4o-mini, gemini-1.5-flash, llama-3.1-8b-instant)'
+    description: 'Specific model to use. Enterprise models: gemini-1.5-pro, claude-3-5-sonnet-20241022, gpt-4o. Free models: gemini-1.5-flash, gpt-4o-mini, llama-3.1-8b-instant'
     required: false
+  project-id:
+    description: 'Google Cloud Project ID (required for Vertex AI)'
+    required: false
+  location:
+    description: 'Google Cloud location/region (default: us-central1)'
+    required: false
+    default: 'us-central1'
 
 outputs:
   template-used:
@@ -67,7 +77,10 @@ runs:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         GOOGLE_API_KEY: ${{ inputs.google-api-key }}
+        VERTEX_AI_API_KEY: ${{ inputs.vertex-ai-api-key }}
         MODEL: ${{ inputs.model }}
+        PROJECT_ID: ${{ inputs.project-id }}
+        LOCATION: ${{ inputs.location }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         TEMPLATE_PATH: ${{ inputs.template-path }}
         DEFAULT_TEMPLATE: ${{ inputs.default-template }}

@@ -49,6 +49,7 @@ class PRTemplateGenerator {
       case 'claude': return process.env.ANTHROPIC_API_KEY;
       case 'openai': return process.env.OPENAI_API_KEY;
       case 'google': return process.env.GOOGLE_API_KEY;
+      case 'vertex-ai': return process.env.VERTEX_AI_API_KEY;
       case 'groq': return process.env.GROQ_API_KEY;
       default: return process.env.ANTHROPIC_API_KEY;
     }
@@ -59,10 +60,11 @@ class PRTemplateGenerator {
     if (process.env.MODEL) return process.env.MODEL;
     
     const defaultModels = {
-      claude: 'claude-3-haiku-20240307', // 더 저렴한 모델
-      openai: 'gpt-4o-mini', // 무료 티어 가능
+      claude: 'claude-3-5-sonnet-20241022', // 최신 고성능 모델
+      openai: 'gpt-4o', // 고성능 모델 (무료 티어 제한적)
       google: 'gemini-1.5-flash', // 무료 티어 있음
-      groq: 'llama-3.1-8b-instant', // 무료 티어 있음
+      'vertex-ai': 'gemini-1.5-pro', // 기업용 고성능
+      groq: 'llama-3.1-70b-versatile', // 더 큰 모델
       huggingface: 'microsoft/DialoGPT-medium' // 무료
     };
     
@@ -202,6 +204,8 @@ Based on the above information, please fill in each section of the PR template.
           return await this.generateWithOpenAI(systemPrompt, userPrompt);
         case 'google':
           return await this.generateWithGoogle(systemPrompt, userPrompt);
+        case 'vertex-ai':
+          return await this.generateWithVertexAI(systemPrompt, userPrompt);
         case 'groq':
           return await this.generateWithGroq(systemPrompt, userPrompt);
         case 'huggingface':
@@ -247,6 +251,44 @@ Based on the above information, please fill in each section of the PR template.
       { text: userPrompt }
     ]);
     return result.response.text();
+  }
+
+  async generateWithVertexAI(systemPrompt, userPrompt) {
+    const projectId = process.env.PROJECT_ID;
+    const location = process.env.LOCATION || 'us-central1';
+    
+    if (!projectId) {
+      throw new Error('PROJECT_ID environment variable is required for Vertex AI');
+    }
+
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${this.model}:generateContent`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `${systemPrompt}\n\n${userPrompt}`
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Vertex AI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.candidates[0].content.parts[0].text;
   }
 
   async generateWithGroq(systemPrompt, userPrompt) {
