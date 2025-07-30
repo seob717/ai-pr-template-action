@@ -36,6 +36,15 @@ class PRTemplateGenerator {
       ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
       : path.join(process.cwd(), ".github", "pull_request_templates");
     this.rulesPath = path.join(process.cwd(), ".github", "pr-rules.json");
+    this.systemPromptPath = path.join(
+      process.cwd(),
+      ".github",
+      "pr-system-prompt.md"
+    );
+    this.defaultSystemPromptPath = path.join(
+      process.cwd(),
+      "default-system-prompt.md"
+    );
     this.aiProvider = process.env.AI_PROVIDER || "claude";
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
@@ -82,6 +91,31 @@ class PRTemplateGenerator {
     };
 
     return defaultModels[this.aiProvider] || defaultModels.claude;
+  }
+
+  // 시스템 프롬프트 로드
+  loadSystemPrompt() {
+    // 1. 사용자 정의 프롬프트 시도
+    if (fs.existsSync(this.systemPromptPath)) {
+      try {
+        return fs.readFileSync(this.systemPromptPath, "utf8");
+      } catch (error) {
+        console.error(
+          "사용자 정의 시스템 프롬프트 파일 로드 실패:",
+          error.message
+        );
+      }
+    }
+    // 2. 기본 프롬프트 시도
+    if (fs.existsSync(this.defaultSystemPromptPath)) {
+      try {
+        return fs.readFileSync(this.defaultSystemPromptPath, "utf8");
+      } catch (error) {
+        console.error("기본 시스템 프롬프트 파일 로드 실패:", error.message);
+      }
+    }
+    // 3. 최후의 폴백 프롬프트
+    return "Please describe the changes based on the git diff.";
   }
 
   // 규칙 파일 로드
@@ -216,31 +250,11 @@ class PRTemplateGenerator {
   }
 
   // AI API로 내용 생성 (다중 제공자 지원)
-  async generateContent(diff, changedFiles, template, extractedInfo = {}) {
-    const extractedInfoString = Object.entries(extractedInfo)
-      .map(
-        ([key, values]) =>
-          `${key}: ${Array.isArray(values) ? values.join(", ") : values}`
-      )
-      .join("\n");
+  async generateContent(diff, changedFiles, template) {
+    const systemPrompt = this.loadSystemPrompt();
+    const userPrompt = `다음 Git Diff와 변경된 파일 목록을 분석하여, 시스템 프롬프트의 지침에 따라 PR 템플릿의 각 \`<!-- AI가 자동으로 채워줍니다 -->\` 섹션을 채워주세요.
 
-    const systemPrompt = `You are an AI assistant that automatically generates Pull Request descriptions from git diffs.
-Your task is to fill out the provided PR template in Korean based on the code changes and any additional context.
-
-Instructions:
-1.  **Analyze the Changes**: Carefully review the git diff and the list of changed files.
-2.  **Use Provided Context**: Incorporate the following extracted information into the relevant sections of the template.
-    \`\`\`
-    ${extractedInfoString}
-    \`\`\`
-3.  **Fill the Template**: Populate each section of the PR template with concise and clear descriptions.
-4.  **Replace Placeholders**: Replace every \`<!-- AI가 자동으로 채워줍니다 -->\` placeholder with relevant content.
-5.  **Handle Non-applicable Sections**: If a section is not relevant to the changes, write "해당 없음".
-6.  **Maintain Structure**: Preserve the original Markdown formatting of the template.`;
-
-    const userPrompt = `Please fill out the following PR template based on the provided git diff and context.
-
-**Changed Files:**
+**변경된 파일:**
 \`\`\`
 ${changedFiles.join("\n")}
 \`\`\`
@@ -250,7 +264,7 @@ ${changedFiles.join("\n")}
 ${diff}
 \`\`\`
 
-**PR Template:**
+**PR 템플릿 (이 템플릿의 플레이스홀더를 채워주세요):**
 ---
 ${template}
 ---
@@ -394,34 +408,39 @@ ${template}
     return result[0]?.generated_text || result.generated_text;
   }
 
-  // 템플릿에 생성된 내용 적용
-  fillTemplate(template, generatedContent, extractedInfo) {
+  // 템플릿에 규칙 기반 정보 적용
+  applyRulesToTemplate(template, extractedInfo) {
     let filledTemplate = template;
-
-    // 1. AI가 생성한 내용 적용 (플레이스홀더 교체)
-    if (generatedContent) {
-      const cleanedContent = generatedContent.replace(/---/g, "").trim();
-      filledTemplate = cleanedContent.replace(
-        /<!-- AI가 자동으로 채워줍니다 -->/g,
-        "해당 없음"
-      );
-    }
-
-    // 2. 규칙 기반으로 추출된 정보 적용
     for (const rule of this.rules) {
       const { pattern, targetSection } = rule;
       const key = pattern; // 패턴을 키로 사용
       if (extractedInfo[key] && extractedInfo[key].length > 0) {
-        const targetRegex = new RegExp(`(${targetSection})`, "i");
-        if (targetRegex.test(filledTemplate)) {
-          const items = extractedInfo[key]
-            .map((item) => `- ${item}`)
-            .join("\n");
-          filledTemplate = filledTemplate.replace(targetRegex, `$1\n${items}`);
+        const items = extractedInfo[key].map((item) => `- ${item}`).join("\n");
+        const sectionRegex = new RegExp(`(${targetSection})`, "i");
+
+        if (sectionRegex.test(filledTemplate)) {
+          // 섹션이 이미 존재하면, placeholder를 교체하거나 바로 아래에 추가합니다.
+          const placeholderRegex = new RegExp(
+            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-)`,
+            "i"
+          );
+          if (placeholderRegex.test(filledTemplate)) {
+            filledTemplate = filledTemplate.replace(
+              placeholderRegex,
+              `$1${items}\n`
+            );
+          } else {
+            filledTemplate = filledTemplate.replace(
+              sectionRegex,
+              `$1\n${items}`
+            );
+          }
+        } else {
+          // 섹션이 없으면 템플릿 끝에 추가합니다.
+          filledTemplate += `\n\n${targetSection}\n${items}`;
         }
       }
     }
-
     return filledTemplate;
   }
 
@@ -457,61 +476,57 @@ ${template}
       console.log(`📡 AI Provider: ${this.aiProvider}`);
       console.log(`🎯 Model: ${this.model}`);
 
-      // 1. Git diff 및 커밋 정보 분석
+      // 1. Git diff 분석
       const { diff, changedFiles } = this.getGitDiff();
-      const commitMessages = this.getGitCommitMessages();
-      const branchName = execSync("git branch --show-current", {
-        encoding: "utf8",
-      }).trim();
-
       if (!diff && changedFiles.length === 0) {
         console.log("변경사항이 없습니다.");
         this.setOutput("content-generated", "false");
         return;
       }
 
-      // 2. 규칙 기반 정보 추출
-      const extractedInfo = this.extractInfoByRules(commitMessages, branchName);
-      console.log("🔍 추출된 정보:", JSON.stringify(extractedInfo, null, 2));
-
-      // 3. 템플릿 선택
+      // 2. 템플릿 선택 및 읽기
       const templateName = this.selectTemplate();
       console.log(`📋 선택된 템플릿: ${templateName}`);
       this.setOutput("template-used", templateName);
+      const originalTemplate = this.readTemplate(templateName);
 
-      // 4. 템플릿 읽기
-      const template = this.readTemplate(templateName);
-
-      // 5. AI로 내용 생성
-      let generatedContent = null;
-      let filledTemplate = template;
-
+      // 3. AI로 내용 생성
+      let aiFilledTemplate = originalTemplate;
       if (this.apiKey) {
         console.log("🧠 AI로 내용 생성 중...");
-        generatedContent = await this.generateContent(
+        const aiGeneratedContent = await this.generateContent(
           diff,
           changedFiles,
-          template,
-          extractedInfo
+          originalTemplate
         );
+        if (aiGeneratedContent) {
+          aiFilledTemplate = aiGeneratedContent;
+        } else {
+          console.log("⚠️ AI 생성 실패, 기본 템플릿만 사용합니다.");
+        }
       } else {
-        console.log("ℹ️ API 키가 없어서 기본 템플릿을 사용합니다.");
+        console.log("ℹ️ API 키가 없어서 기본 템플릿만 사용합니다.");
       }
 
-      // 6. 템플릿 채우기
-      filledTemplate = this.fillTemplate(
-        template,
-        generatedContent,
+      // 4. 규칙 기반 정보 추출 및 최종 템플릿에 적용
+      const commitMessages = this.getGitCommitMessages();
+      const branchName = execSync("git branch --show-current", {
+        encoding: "utf8",
+      }).trim();
+      const extractedInfo = this.extractInfoByRules(commitMessages, branchName);
+      console.log("🔍 추출된 정보:", JSON.stringify(extractedInfo, null, 2));
+      const finalContent = this.applyRulesToTemplate(
+        aiFilledTemplate,
         extractedInfo
       );
 
-      // 7. 파일로 저장
-      fs.writeFileSync("pr-template-output.md", filledTemplate);
+      // 5. 파일로 저장
+      fs.writeFileSync("pr-template-output.md", finalContent);
       this.setOutput("content-generated", "true");
 
       console.log("✅ PR 템플릿 생성 완료");
 
-      return filledTemplate;
+      return finalContent;
     } catch (error) {
       console.error("❌ PR 템플릿 생성 실패:", error.message);
       this.setOutput("content-generated", "false");
