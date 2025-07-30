@@ -11,7 +11,9 @@ const anthropic = new Anthropic({
 
 class PRTemplateGenerator {
   constructor() {
-    this.templateDir = path.join(process.cwd(), '.github', 'pull_request_templates');
+    this.templateDir = process.env.TEMPLATE_PATH 
+      ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
+      : path.join(process.cwd(), '.github', 'pull_request_templates');
   }
 
   // Git diff 분석
@@ -60,7 +62,57 @@ class PRTemplateGenerator {
     if (fs.existsSync(templatePath)) {
       return fs.readFileSync(templatePath, 'utf8');
     }
-    throw new Error(`템플릿 파일을 찾을 수 없습니다: ${templatePath}`);
+    
+    // 기본 템플릿 생성
+    console.log(`템플릿 파일이 없어서 기본 템플릿을 생성합니다: ${templatePath}`);
+    return this.createDefaultTemplate(templateName);
+  }
+
+  // 기본 템플릿 생성
+  createDefaultTemplate(templateName) {
+    const templates = {
+      feature: `## 🎯 Feature Description
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## 🔄 Changes Made
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## 🧪 Testing
+
+- [ ] Unit tests added
+- [ ] Integration tests updated
+- [ ] Manual testing completed
+
+## 📝 Notes for Reviewers
+
+<!-- AI가 자동으로 채워줍니다 -->`,
+      hotfix: `## 🚨 Issue Description
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## 🔧 Fix Applied
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## 🧪 Verification
+
+<!-- AI가 자동으로 채워줍니다 -->`,
+      default: `## Description
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## Changes
+
+<!-- AI가 자동으로 채워줍니다 -->
+
+## Testing
+
+<!-- AI가 자동으로 채워줍니다 -->`
+    };
+    
+    return templates[templateName] || templates.default;
   }
 
   // Claude API로 내용 생성
@@ -176,14 +228,14 @@ ${diff}
       const { diff, changedFiles } = this.getGitDiff();
       if (!diff && changedFiles.length === 0) {
         console.log('변경사항이 없습니다.');
-        console.log('::set-output name=content-generated::false');
+        this.setOutput('content-generated', 'false');
         return;
       }
       
       // 2. 템플릿 선택
       const templateName = this.selectTemplate();
       console.log(`📋 선택된 템플릿: ${templateName}`);
-      console.log(`::set-output name=template-used::${templateName}`);
+      this.setOutput('template-used', templateName);
       
       // 3. 템플릿 읽기
       const template = this.readTemplate(templateName);
@@ -194,7 +246,7 @@ ${diff}
       
       if (!generatedContent) {
         console.error('❌ 내용 생성에 실패했습니다.');
-        console.log('::set-output name=content-generated::false');
+        this.setOutput('content-generated', 'false');
         return;
       }
       
@@ -203,7 +255,7 @@ ${diff}
       
       // 6. 파일로 저장 (GitHub Action에서 사용)
       fs.writeFileSync('pr-template-output.md', filledTemplate);
-      console.log('::set-output name=content-generated::true');
+      this.setOutput('content-generated', 'true');
       
       console.log('✅ PR 템플릿 생성 완료');
       
@@ -211,8 +263,18 @@ ${diff}
       
     } catch (error) {
       console.error('❌ PR 템플릿 생성 실패:', error.message);
-      console.log('::set-output name=content-generated::false');
+      this.setOutput('content-generated', 'false');
       process.exit(1);
+    }
+  }
+
+  // GitHub Actions output 설정 (새로운 방식)
+  setOutput(name, value) {
+    if (process.env.GITHUB_OUTPUT) {
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+    } else {
+      // 로컬 테스트용 fallback
+      console.log(`::set-output name=${name}::${value}`);
     }
   }
 }
