@@ -3,9 +3,22 @@ description: 'Automatically generate and fill PR templates using Claude AI based
 author: 'seob717'
 
 inputs:
+  ai-provider:
+    description: 'AI provider to use (claude, openai, google, groq, huggingface)'
+    required: false
+    default: 'claude'
+  api-key:
+    description: 'API key for the selected AI provider'
+    required: false
   anthropic-api-key:
-    description: 'Anthropic API key for Claude'
-    required: true
+    description: 'Anthropic API key for Claude (deprecated, use api-key)'
+    required: false
+  openai-api-key:
+    description: 'OpenAI API key (deprecated, use api-key)'
+    required: false
+  google-api-key:
+    description: 'Google API key for Gemini (deprecated, use api-key)'
+    required: false
   github-token:
     description: 'GitHub token for PR operations'
     required: true
@@ -18,6 +31,9 @@ inputs:
     description: 'Default template to use when auto-selection fails'
     required: false
     default: 'feature'
+  model:
+    description: 'Specific model to use (e.g., gpt-4o-mini, gemini-1.5-flash, llama-3.1-8b-instant)'
+    required: false
 
 outputs:
   template-used:
@@ -40,12 +56,18 @@ runs:
       run: |
         cd ${{ github.action_path }}
         npm install --production
+        npm install openai @google/generative-ai groq-sdk
         
     - name: Generate PR Template
       shell: bash
       id: generate
       env:
+        AI_PROVIDER: ${{ inputs.ai-provider }}
+        API_KEY: ${{ inputs.api-key }}
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
+        MODEL: ${{ inputs.model }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         TEMPLATE_PATH: ${{ inputs.template-path }}
         DEFAULT_TEMPLATE: ${{ inputs.default-template }}

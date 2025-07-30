@@ -1,19 +1,72 @@
 #!/usr/bin/env node
 
-import { Anthropic } from '@anthropic-ai/sdk';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// AI Provider imports
+let Anthropic, OpenAI, GoogleGenerativeAI, Groq;
+
+// Dynamic imports based on provider
+async function importAISDKs() {
+  try {
+    const anthropicModule = await import('@anthropic-ai/sdk');
+    Anthropic = anthropicModule.Anthropic;
+  } catch (e) {}
+  
+  try {
+    const openaiModule = await import('openai');
+    OpenAI = openaiModule.OpenAI;
+  } catch (e) {}
+  
+  try {
+    const googleModule = await import('@google/generative-ai');
+    GoogleGenerativeAI = googleModule.GoogleGenerativeAI;
+  } catch (e) {}
+  
+  try {
+    const groqModule = await import('groq-sdk');
+    Groq = groqModule.Groq;
+  } catch (e) {}
+}
 
 class PRTemplateGenerator {
   constructor() {
     this.templateDir = process.env.TEMPLATE_PATH 
       ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
       : path.join(process.cwd(), '.github', 'pull_request_templates');
+    
+    this.aiProvider = process.env.AI_PROVIDER || 'claude';
+    this.apiKey = this.getAPIKey();
+    this.model = this.getModel();
+  }
+
+  // API 키 가져오기 (우선순위: api-key > 개별 키)
+  getAPIKey() {
+    if (process.env.API_KEY) return process.env.API_KEY;
+    
+    switch (this.aiProvider) {
+      case 'claude': return process.env.ANTHROPIC_API_KEY;
+      case 'openai': return process.env.OPENAI_API_KEY;
+      case 'google': return process.env.GOOGLE_API_KEY;
+      case 'groq': return process.env.GROQ_API_KEY;
+      default: return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+
+  // 모델 선택
+  getModel() {
+    if (process.env.MODEL) return process.env.MODEL;
+    
+    const defaultModels = {
+      claude: 'claude-3-haiku-20240307', // 더 저렴한 모델
+      openai: 'gpt-4o-mini', // 무료 티어 가능
+      google: 'gemini-1.5-flash', // 무료 티어 있음
+      groq: 'llama-3.1-8b-instant', // 무료 티어 있음
+      huggingface: 'microsoft/DialoGPT-medium' // 무료
+    };
+    
+    return defaultModels[this.aiProvider] || defaultModels.claude;
   }
 
   // Git diff 분석
@@ -115,43 +168,115 @@ class PRTemplateGenerator {
     return templates[templateName] || templates.default;
   }
 
-  // Claude API로 내용 생성
+  // AI API로 내용 생성 (다중 제공자 지원)
   async generateContent(diff, changedFiles, template) {
     const systemPrompt = `
-당신은 PR 템플릿을 자동으로 작성하는 AI입니다. 
-주어진 git diff와 변경된 파일 목록을 분석해서 다음 섹션들을 채워주세요:
+You are an AI that automatically writes PR templates.
+Analyze the given git diff and list of changed files and fill in the following sections:
 
-1. 개발 변경 사항: 기술적인 변경점을 간결하게 설명
-2. 주요 변경점: 핵심 변경사항을 불릿 포인트로 나열
-3. 검토자가 알아야 할 사항: 리뷰어가 특히 주의깊게 봐야 할 부분
-4. 예상 리뷰 소요 시간: 변경량을 고려해서 5분, 10분, 30분, 1시간 중 선택
+1. Development changes: Briefly describe technical changes
+2. Key changes: List core changes as bullet points  
+3. Reviewer notes: Areas reviewers should pay special attention to
+4. Estimated review time: Choose from 5 minutes, 10 minutes, 30 minutes, 1 hour based on change volume
 
-한국어로 작성하고, 각 섹션은 구체적이고 명확하게 작성해주세요.
+Write in Korean and make each section specific and clear.
 `;
 
     const userPrompt = `
-변경된 파일들:
+Changed files:
 ${changedFiles.join('\n')}
 
 Git Diff:
 ${diff}
 
-위 정보를 바탕으로 PR 템플릿의 각 섹션을 채워주세요.
+Based on the above information, please fill in each section of the PR template.
 `;
 
     try {
-      const message = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      });
-
-      return message.content[0].text;
+      console.log(`🤖 Using ${this.aiProvider} with model ${this.model}`);
+      
+      switch (this.aiProvider) {
+        case 'claude':
+          return await this.generateWithClaude(systemPrompt, userPrompt);
+        case 'openai':
+          return await this.generateWithOpenAI(systemPrompt, userPrompt);
+        case 'google':
+          return await this.generateWithGoogle(systemPrompt, userPrompt);
+        case 'groq':
+          return await this.generateWithGroq(systemPrompt, userPrompt);
+        case 'huggingface':
+          return await this.generateWithHuggingFace(systemPrompt, userPrompt);
+        default:
+          throw new Error(`Unsupported AI provider: ${this.aiProvider}`);
+      }
     } catch (error) {
-      console.error('Claude API 호출 실패:', error.message);
+      console.error(`${this.aiProvider} API 호출 실패:`, error.message);
       return null;
     }
+  }
+
+  async generateWithClaude(systemPrompt, userPrompt) {
+    const anthropic = new Anthropic({ apiKey: this.apiKey });
+    const message = await anthropic.messages.create({
+      model: this.model,
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    });
+    return message.content[0].text;
+  }
+
+  async generateWithOpenAI(systemPrompt, userPrompt) {
+    const openai = new OpenAI({ apiKey: this.apiKey });
+    const completion = await openai.chat.completions.create({
+      model: this.model,
+      max_tokens: 1000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    });
+    return completion.choices[0].message.content;
+  }
+
+  async generateWithGoogle(systemPrompt, userPrompt) {
+    const genAI = new GoogleGenerativeAI(this.apiKey);
+    const model = genAI.getGenerativeModel({ model: this.model });
+    const result = await model.generateContent([
+      { text: systemPrompt },
+      { text: userPrompt }
+    ]);
+    return result.response.text();
+  }
+
+  async generateWithGroq(systemPrompt, userPrompt) {
+    const groq = new Groq({ apiKey: this.apiKey });
+    const completion = await groq.chat.completions.create({
+      model: this.model,
+      max_tokens: 1000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    });
+    return completion.choices[0].message.content;
+  }
+
+  async generateWithHuggingFace(systemPrompt, userPrompt) {
+    const response = await fetch(`https://api-inference.huggingface.co/models/${this.model}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputs: `${systemPrompt}\n\nUser: ${userPrompt}`,
+        parameters: { max_length: 1000 }
+      })
+    });
+    
+    const result = await response.json();
+    return result[0]?.generated_text || result.generated_text;
   }
 
   // 템플릿에 생성된 내용 적용
@@ -222,7 +347,9 @@ ${diff}
   // 메인 실행 함수
   async generate() {
     try {
-      console.log('🤖 AI PR 템플릿 생성기 시작...');
+      console.log('🤖 AI PR Template Generator 시작...');
+      console.log(`📡 AI Provider: ${this.aiProvider}`);
+      console.log(`🎯 Model: ${this.model}`);
       
       // 1. Git diff 분석
       const { diff, changedFiles } = this.getGitDiff();
@@ -281,8 +408,9 @@ ${diff}
 
 // 실행
 if (import.meta.url === `file://${process.argv[1]}`) {
+  await importAISDKs();
   const generator = new PRTemplateGenerator();
-  generator.generate();
+  await generator.generate();
 }
 
 export default PRTemplateGenerator;

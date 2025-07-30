@@ -3,15 +3,18 @@
 [![GitHub release](https://img.shields.io/github/release/seob717/ai-pr-template-action.svg)](https://github.com/seob717/ai-pr-template-action/releases)
 [![GitHub marketplace](https://img.shields.io/badge/marketplace-ai--pr--template--generator-blue?logo=github)](https://github.com/marketplace/actions/ai-pr-template-generator)
 
-Automatically generate and fill PR templates using Claude AI based on git diff analysis. This action analyzes your code changes and intelligently fills out PR template sections, saving time and ensuring consistent PR documentation.
+Automatically generate and fill PR templates using multiple AI providers based on git diff analysis. This action analyzes your code changes and intelligently fills out PR template sections, saving time and ensuring consistent PR documentation.
+
+**🆓 Free tier support for multiple AI providers!**
 
 ## ✨ Features
 
-- **🤖 AI-Powered Content Generation**: Uses Claude AI to analyze git diffs and generate meaningful PR descriptions
+- **🤖 Multiple AI Providers**: Support for Claude, OpenAI, Google Gemini, Groq, and Hugging Face
+- **🆓 Free Tier Support**: Use free models like GPT-4o-mini, Gemini Flash, Llama 3.1, etc.
 - **📋 Smart Template Selection**: Automatically selects appropriate templates based on branch names or commit messages
 - **🎯 Customizable Templates**: Support for multiple PR template types (feature, hotfix, release, bugfix)
 - **⚡ Zero Configuration**: Works out of the box with sensible defaults
-- **🔧 Highly Configurable**: Customize template paths, default templates, and more
+- **🔧 Highly Configurable**: Customize AI providers, models, template paths, and more
 
 ## 🚀 Quick Start
 
@@ -51,6 +54,8 @@ Example `feature.md`:
 
 Create `.github/workflows/ai-pr-template.yml`:
 
+#### 🆓 Using Free Models
+
 ```yaml
 name: AI PR Template
 
@@ -71,18 +76,33 @@ jobs:
         with:
           fetch-depth: 2
           
+      # Using Groq (Free Llama 3.1)
       - name: Generate AI PR Template
         uses: seob717/ai-pr-template-action@v1
         with:
-          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ai-provider: 'groq'
+          api-key: ${{ secrets.GROQ_API_KEY }}
+          
+      # Or using Google Gemini (Free tier)
+      # - name: Generate AI PR Template
+      #   uses: seob717/ai-pr-template-action@v1
+      #   with:
+      #     ai-provider: 'google'
+      #     api-key: ${{ secrets.GOOGLE_API_KEY }}
+      #     model: 'gemini-1.5-flash'
 ```
 
 ### 3. Add API Key
 
-Add your Anthropic API key to repository secrets:
-- Go to Settings → Secrets and variables → Actions
-- Add `ANTHROPIC_API_KEY` with your Claude API key
+Choose your preferred AI provider and add the API key:
+
+#### 🆓 **Free Options** (Recommended):
+- **Groq**: Fast Llama 3.1 - Get free API key at [console.groq.com](https://console.groq.com)
+- **Google Gemini**: Free tier available - Get API key at [makersuite.google.com](https://makersuite.google.com)
+- **OpenAI**: GPT-4o-mini has generous free tier - Get API key at [platform.openai.com](https://platform.openai.com)
+
+#### 💰 **Paid Options**:
+- **Claude**: High quality responses - Get API key at [console.anthropic.com](https://console.anthropic.com)
 
 ## 📖 Usage
 
