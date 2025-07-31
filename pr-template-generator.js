@@ -4,6 +4,21 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import * as github from "@actions/github";
+import {
+  DEFAULT_PATHS,
+  DEFAULT_CONFIG,
+  DEFAULT_MODELS,
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_TEMPLATES,
+  DEFAULT_RULES,
+  DEFAULT_TEMPLATE_PATTERNS,
+  DEFAULT_COMMIT_PATTERNS,
+  FALLBACK_PROMPT,
+  OUTPUT_FILENAME,
+  AI_GENERATION_CONFIG,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES
+} from "./defaults.js";
 
 // AI Provider imports
 let Anthropic, OpenAI, GoogleGenerativeAI, Groq;
@@ -33,25 +48,16 @@ async function importAISDKs() {
 
 class PRTemplateGenerator {
   constructor() {
-    this.templateDir = process.env.TEMPLATE_PATH
-      ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
-      : path.join(process.cwd(), ".github", "pull_request_templates");
-    this.rulesPath = path.join(process.cwd(), ".github", "pr-rules.json");
-    this.systemPromptPath = path.join(
-      process.cwd(),
-      ".github",
-      "pr-system-prompt.md"
-    );
-    this.defaultSystemPromptPath = path.join(
-      process.cwd(),
-      "default-system-prompt.md"
-    );
-    this.aiProvider = process.env.AI_PROVIDER || "claude";
+    // Try new structure first, fallback to legacy
+    this.templateDir = this.resolveTemplatePath();
+    this.rulesPath = this.resolveRulesPath();
+    this.systemPromptPath = this.resolveSystemPromptPath();
+    this.aiProvider = process.env.AI_PROVIDER || DEFAULT_CONFIG.aiProvider;
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
     const rulesData = this.loadRules();
     this.rules = rulesData.rules || [];
-    this.templateSelectionRules = rulesData.templateSelection || { rules: [], defaultTemplate: "feature" };
+    this.templateSelectionRules = rulesData.templateSelection || DEFAULT_RULES.templateSelection;
 
     this.githubToken = process.env.GITHUB_TOKEN;
     if (this.githubToken) {
@@ -59,10 +65,40 @@ class PRTemplateGenerator {
     }
 
     if (!this.apiKey) {
-      console.log(
-        "⚠️ No API key found. Will use basic template without AI generation."
-      );
+      console.log(ERROR_MESSAGES.noApiKey);
     }
+  }
+
+  // Path resolution methods (new structure first, legacy fallback)
+  resolveTemplatePath() {
+    if (process.env.TEMPLATE_PATH) {
+      return path.join(process.cwd(), process.env.TEMPLATE_PATH);
+    }
+    
+    const newPath = path.join(process.cwd(), DEFAULT_PATHS.templateDir);
+    if (fs.existsSync(newPath)) {
+      return newPath;
+    }
+    
+    return path.join(process.cwd(), DEFAULT_PATHS.legacyTemplateDir);
+  }
+
+  resolveRulesPath() {
+    const newPath = path.join(process.cwd(), DEFAULT_PATHS.rulesPath);
+    if (fs.existsSync(newPath)) {
+      return newPath;
+    }
+    
+    return path.join(process.cwd(), DEFAULT_PATHS.legacyRulesPath);
+  }
+
+  resolveSystemPromptPath() {
+    const newPath = path.join(process.cwd(), DEFAULT_PATHS.systemPromptPath);
+    if (fs.existsSync(newPath)) {
+      return newPath;
+    }
+    
+    return path.join(process.cwd(), DEFAULT_PATHS.legacySystemPromptPath);
   }
 
   // API 키 가져오기 (우선순위: api-key > 개별 키)
@@ -88,42 +124,22 @@ class PRTemplateGenerator {
   // 모델 선택
   getModel() {
     if (process.env.MODEL) return process.env.MODEL;
-
-    const defaultModels = {
-      claude: "claude-3-5-sonnet-20241022", // 최신 고성능 모델
-      openai: "gpt-4o", // 고성능 모델 (무료 티어 제한적)
-      google: "gemini-1.5-flash", // 무료 티어 있음
-      "vertex-ai": "gemini-1.5-pro", // 기업용 고성능
-      groq: "llama-3.1-70b-versatile", // 더 큰 모델
-      huggingface: "microsoft/DialoGPT-medium", // 무료
-    };
-
-    return defaultModels[this.aiProvider] || defaultModels.claude;
+    return DEFAULT_MODELS[this.aiProvider] || DEFAULT_MODELS.claude;
   }
 
   // 시스템 프롬프트 로드
   loadSystemPrompt() {
-    // 1. 사용자 정의 프롬프트 시도
+    // 사용자 정의 프롬프트 시도
     if (fs.existsSync(this.systemPromptPath)) {
       try {
         return fs.readFileSync(this.systemPromptPath, "utf8");
       } catch (error) {
-        console.error(
-          "사용자 정의 시스템 프롬프트 파일 로드 실패:",
-          error.message
-        );
+        console.error("시스템 프롬프트 파일 로드 실패:", error.message);
       }
     }
-    // 2. 기본 프롬프트 시도
-    if (fs.existsSync(this.defaultSystemPromptPath)) {
-      try {
-        return fs.readFileSync(this.defaultSystemPromptPath, "utf8");
-      } catch (error) {
-        console.error("기본 시스템 프롬프트 파일 로드 실패:", error.message);
-      }
-    }
-    // 3. 최후의 폴백 프롬프트
-    return "Please describe the changes based on the git diff.";
+    
+    // 기본 프롬프트 반환
+    return DEFAULT_SYSTEM_PROMPT;
   }
 
   // 규칙 파일 로드
@@ -133,11 +149,11 @@ class PRTemplateGenerator {
         const content = fs.readFileSync(this.rulesPath, "utf8");
         return JSON.parse(content);
       } catch (error) {
-        console.error("규칙 파일 로드 또는 파싱 실패:", error.message);
-        return { rules: [], templateSelection: { rules: [], defaultTemplate: "feature" } };
+        console.error(ERROR_MESSAGES.ruleLoadFailed, error.message);
+        return DEFAULT_RULES;
       }
     }
-    return { rules: [], templateSelection: { rules: [], defaultTemplate: "feature" } };
+    return DEFAULT_RULES;
   }
 
   // 관련 Git 커밋 메시지 가져오기
@@ -344,10 +360,10 @@ class PRTemplateGenerator {
       }
 
       // 매치되는 규칙이 없으면 기본 템플릿 사용
-      return this.templateSelectionRules.defaultTemplate || "feature";
+      return this.templateSelectionRules.defaultTemplate || DEFAULT_CONFIG.defaultTemplate;
     } catch (error) {
-      console.error("템플릿 선택 실패:", error.message);
-      return this.templateSelectionRules.defaultTemplate || "feature";
+      console.error(ERROR_MESSAGES.templateSelectionFailed, error.message);
+      return this.templateSelectionRules.defaultTemplate || DEFAULT_CONFIG.defaultTemplate;
     }
   }
 
@@ -362,23 +378,24 @@ class PRTemplateGenerator {
       }).trim();
 
       // 브랜치명 기반 선택
-      if (branchName.includes("hotfix")) return "hotfix";
-      if (branchName.includes("release")) return "release";
-      if (branchName.includes("feature") || branchName.includes("feat"))
-        return "feature";
-      if (branchName.includes("bugfix") || branchName.includes("bug"))
-        return "bugfix";
+      for (const [template, patterns] of Object.entries(DEFAULT_TEMPLATE_PATTERNS)) {
+        if (patterns.some(pattern => branchName.includes(pattern))) {
+          return template;
+        }
+      }
 
       // 커밋 메시지 기반 선택
-      if (lastCommit.toLowerCase().startsWith("hotfix")) return "hotfix";
-      if (lastCommit.toLowerCase().startsWith("feat")) return "feature";
-      if (lastCommit.toLowerCase().startsWith("fix")) return "bugfix";
-      if (lastCommit.toLowerCase().startsWith("release")) return "release";
+      const lowerCommit = lastCommit.toLowerCase();
+      for (const [template, patterns] of Object.entries(DEFAULT_COMMIT_PATTERNS)) {
+        if (patterns.some(pattern => lowerCommit.startsWith(pattern))) {
+          return template;
+        }
+      }
 
-      return "feature"; // 기본값
+      return DEFAULT_CONFIG.defaultTemplate;
     } catch (error) {
-      console.error("기본 템플릿 선택 실패:", error.message);
-      return "feature";
+      console.error(ERROR_MESSAGES.templateSelectionFailed, error.message);
+      return DEFAULT_CONFIG.defaultTemplate;
     }
   }
 
@@ -398,36 +415,7 @@ class PRTemplateGenerator {
 
   // 기본 템플릿 생성
   createDefaultTemplate(templateName) {
-    const templates = {
-      feature: `## 🎯 Feature Description
-
-<!-- AI가 자동으로 채워줍니다 -->
-
-## 🔄 Changes Made
-
-<!-- AI가 자동으로 채워줍니다 -->
-
-## 🧪 Testing
-
-- [ ] Manual testing completed
-
-## 📝 Notes for Reviewers
-
-<!-- AI가 자동으로 채워줍니다 -->`,
-      default: `## Description
-
-<!-- AI가 자동으로 채워줍니다 -->
-
-## Changes
-
-<!-- AI가 자동으로 채워줍니다 -->
-
-## Testing
-
-<!-- AI가 자동으로 채워줍니다 -->`,
-    };
-
-    return templates[templateName] || templates.default;
+    return DEFAULT_TEMPLATES[templateName] || DEFAULT_TEMPLATES.default;
   }
 
   // AI API로 내용 생성 (다중 제공자 지원)
@@ -668,28 +656,28 @@ ${template}
   // 메인 실행 함수
   async generate() {
     try {
-      console.log("🤖 AI PR Template Generator 시작...");
+      console.log(SUCCESS_MESSAGES.generationStarted);
       console.log(`📡 AI Provider: ${this.aiProvider}`);
       console.log(`🎯 Model: ${this.model}`);
 
       // 1. Git diff 분석
       const { diff, changedFiles } = await this.getGitDiff();
       if (!diff && changedFiles.length === 0) {
-        console.log("변경사항이 없습니다.");
+        console.log(ERROR_MESSAGES.noChanges);
         this.setOutput("content-generated", "false");
         return;
       }
 
       // 2. 템플릿 선택 및 읽기
       const templateName = this.selectTemplate();
-      console.log(`📋 선택된 템플릿: ${templateName}`);
+      console.log(`${SUCCESS_MESSAGES.templateSelected} ${templateName}`);
       this.setOutput("template-used", templateName);
       const originalTemplate = this.readTemplate(templateName);
 
       // 3. AI로 내용 생성
       let aiFilledTemplate = originalTemplate;
       if (this.apiKey) {
-        console.log("🧠 AI로 내용 생성 중...");
+        console.log(SUCCESS_MESSAGES.aiGenerating);
         const aiGeneratedContent = await this.generateContent(
           diff,
           changedFiles,
@@ -698,7 +686,7 @@ ${template}
         if (aiGeneratedContent) {
           aiFilledTemplate = aiGeneratedContent;
         } else {
-          console.log("⚠️ AI 생성 실패, 기본 템플릿만 사용합니다.");
+          console.log(ERROR_MESSAGES.aiGenerationFailed);
         }
       } else {
         console.log("ℹ️ API 키가 없어서 기본 템플릿만 사용합니다.");
@@ -717,10 +705,10 @@ ${template}
       );
 
       // 5. 파일로 저장
-      fs.writeFileSync("pr-template-output.md", finalContent);
+      fs.writeFileSync(OUTPUT_FILENAME, finalContent);
       this.setOutput("content-generated", "true");
 
-      console.log("✅ PR 템플릿 생성 완료");
+      console.log(SUCCESS_MESSAGES.generationComplete);
 
       return finalContent;
     } catch (error) {

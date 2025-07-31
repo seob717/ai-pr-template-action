@@ -1,8 +1,12 @@
 {
   "rules": [
     {
-      "pattern": "(DD-\\d+)",
+      "pattern": "(PROJ-\\d+)",
       "targetSection": "## Jira Tickets"
+    },
+    {
+      "pattern": "#(\\d+)",
+      "targetSection": "## GitHub Issues"
     }
   ],
   "templateSelection": {
@@ -20,22 +24,28 @@
         "priority": 2
       },
       {
-        "condition": "pr_title",
-        "pattern": "^\\[FIX\\]|^fix:",
-        "template": "bugfix", 
-        "priority": 3
-      },
-      {
         "condition": "branch",
-        "pattern": "hotfix/",
-        "template": "hotfix",
-        "priority": 4
+        "pattern": "hotfix/|fix/",
+        "template": "hotfix", 
+        "priority": 3
       },
       {
         "condition": "branch",
         "pattern": "feature/|feat/",
         "template": "feature", 
+        "priority": 4
+      },
+      {
+        "condition": "commit",
+        "pattern": "^fix:|^hotfix:",
+        "template": "hotfix",
         "priority": 5
+      },
+      {
+        "condition": "commit",
+        "pattern": "^feat:|^feature:",
+        "template": "feature",
+        "priority": 6
       }
     ],
     "defaultTemplate": "feature"

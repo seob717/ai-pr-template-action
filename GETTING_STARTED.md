@@ -6,7 +6,7 @@ Quick setup guide to start using AI-powered PR templates in 5 minutes.
 
 ### Step 1: Create Your First Template
 
-Create `.github/pull_request_templates/feature.md`:
+Create `.github/ai-pr/templates/feature.md`:
 
 ```markdown
 ## 🎯 What does this PR do?
@@ -171,9 +171,9 @@ model: "claude-3-5-sonnet-20241022"
 
 ## 🎨 Customization
 
-### Extract Jira Tickets
+### Extract Tickets & Auto-Select Templates
 
-Create `.github/pr-rules.json`:
+Create `.github/ai-pr/rules.json`:
 
 ```json
 {
@@ -182,13 +182,36 @@ Create `.github/pr-rules.json`:
       "pattern": "(PROJ-\\d+)",
       "targetSection": "## Jira Ticket"
     }
-  ]
+  ],
+  "templateSelection": {
+    "rules": [
+      {
+        "condition": "pr_title",
+        "pattern": "^\\[HOTFIX\\]",
+        "template": "hotfix",
+        "priority": 1
+      },
+      {
+        "condition": "branch",
+        "pattern": "feature/",
+        "template": "feature",
+        "priority": 2
+      }
+    ],
+    "defaultTemplate": "feature"
+  }
 }
 ```
 
+This will:
+- Extract PROJ-123 tickets from commits
+- Use hotfix template if PR title starts with [HOTFIX]
+- Use feature template for feature/ branches
+- Default to feature template otherwise
+
 ### Custom AI Instructions
 
-Create `.github/pr-system-prompt.md`:
+Create `.github/ai-pr/prompt.md`:
 
 ```markdown
 You are a senior developer reviewing code changes.

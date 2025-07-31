@@ -1,4 +1,4 @@
-# Example workflow file for using AI PR Template Generator
+# Example workflow file for AI PR Template Generator
 # Place this in your repository at: .github/workflows/ai-pr-template.yml
 
 name: AI PR Template
@@ -17,40 +17,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
           
-      # 🏢 Enterprise setup (Recommended for corporate use)
-      - name: Generate AI PR Template (Enterprise)
+      - name: Generate AI PR Template
+        id: ai-pr-template
         uses: seob717/ai-pr-template-action@v1
         with:
-          ai-provider: 'vertex-ai'
-          api-key: ${{ secrets.VERTEX_AI_API_KEY }}
-          project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
-          model: 'gemini-1.5-pro'
-          location: 'us-central1'
-          
-      # 🆓 Free usage examples
-      # - name: Generate AI PR Template (Free - Groq)
-      #   uses: seob717/ai-pr-template-action@v1
-      #   with:
-      #     ai-provider: 'groq'
-      #     api-key: ${{ secrets.GROQ_API_KEY }}
-      #     model: 'llama-3.1-70b-versatile'
-      
-      # - name: Generate AI PR Template (Free - Gemini)
-      #   uses: seob717/ai-pr-template-action@v1
-      #   with:
-      #     ai-provider: 'google'
-      #     api-key: ${{ secrets.GOOGLE_API_KEY }}
-      #     model: 'gemini-1.5-flash'
-          
-      # Advanced usage with custom settings
-      # - name: Generate AI PR Template (Advanced)
-      #   uses: seob717/ai-pr-template-action@v1
-      #   with:
-      #     ai-provider: 'claude'
-      #     api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-      #     model: 'claude-3-5-sonnet-20241022'
-      #     template-path: 'docs/pr_templates'
-      #     default-template: 'enhancement'
+          # 🆓 Free option (recommended for most users)
+          ai-provider: "groq"
+          api-key: ${{ secrets.GROQ_API_KEY }}
+          model: "llama-3.1-70b-versatile"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR Body
+        if: steps.ai-pr-template.outputs.content-generated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prBody = fs.readFileSync('pr-template-output.md', 'utf8');
+            
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: prBody
+            });
+
+# Alternative configurations:
+
+# 🏢 Enterprise (Vertex AI)
+# ai-provider: "vertex-ai"
+# api-key: ${{ secrets.VERTEX_AI_API_KEY }}
+# project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+# model: "gemini-1.5-pro"
+
+# 🔒 Privacy-focused (Claude)  
+# ai-provider: "claude"
+# api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+# model: "claude-3-5-sonnet-20241022"

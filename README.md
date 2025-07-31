@@ -22,9 +22,9 @@ Automatically generate and fill PR templates using AI. Analyzes your code change
 
 ## 🚀 Quick Start
 
-### 1. Create a PR Template
+### 1. Create Configuration Structure
 
-Create `.github/pull_request_templates/feature.md`:
+Create `.github/ai-pr/templates/feature.md`:
 
 ```markdown
 ## 🎯 What does this PR do?
@@ -141,7 +141,7 @@ model: "claude-3-5-sonnet-20241022"
 | `ai-provider` | AI provider (`claude`, `openai`, `google`, `vertex-ai`, `groq`) | ❌ | `claude` |
 | `api-key` | API key for the selected provider | ✅ | - |
 | `model` | Specific model name | ❌ | Provider default |
-| `template-path` | Path to templates directory | ❌ | `.github/pull_request_templates` |
+| `template-path` | Path to templates directory | ❌ | `.github/ai-pr/templates` |
 | `github-token` | GitHub token for PR updates | ✅ | `${{ secrets.GITHUB_TOKEN }}` |
 
 ### Outputs
@@ -153,9 +153,9 @@ model: "claude-3-5-sonnet-20241022"
 
 ## 🛠️ Advanced Features
 
-### Extract Jira Tickets
+### Advanced Configuration
 
-Create `.github/pr-rules.json`:
+Create `.github/ai-pr/rules.json`:
 
 ```json
 {
@@ -163,14 +163,40 @@ Create `.github/pr-rules.json`:
     {
       "pattern": "(PROJ-\\d+)",
       "targetSection": "## Jira Tickets"
+    },
+    {
+      "pattern": "#(\\d+)",
+      "targetSection": "## GitHub Issues"
     }
-  ]
+  ],
+  "templateSelection": {
+    "rules": [
+      {
+        "condition": "pr_title",
+        "pattern": "^\\[HOTFIX\\]",
+        "template": "hotfix",
+        "priority": 1
+      },
+      {
+        "condition": "branch",
+        "pattern": "feature/|feat/",
+        "template": "feature",
+        "priority": 2
+      }
+    ],
+    "defaultTemplate": "feature"
+  }
 }
 ```
 
+**Features:**
+- Extract tickets from commits/branches
+- Auto-select templates based on PR title, branch name, or commit message
+- Priority-based template selection
+
 ### Custom AI Instructions
 
-Create `.github/pr-system-prompt.md`:
+Create `.github/ai-pr/prompt.md`:
 
 ```markdown
 You are a senior developer. Write clear, concise PR descriptions focusing on:
@@ -184,6 +210,16 @@ You are a senior developer. Write clear, concise PR descriptions focusing on:
 The action automatically selects templates based on:
 - Branch names: `feature/`, `hotfix/`, `bugfix/`
 - Commit messages: `feat:`, `fix:`, `hotfix:`
+
+**New Clean Structure:**
+```
+.github/ai-pr/
+├── rules.json      # Extract tickets/info
+├── prompt.md       # Custom AI instructions  
+└── templates/      # Your PR templates
+    ├── feature.md
+    └── hotfix.md
+```
 
 ## 📚 Documentation
 

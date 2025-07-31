@@ -16,7 +16,7 @@ Advanced configuration and optimization tips for AI PR Template Generator.
 
 ### File Location
 ```
-.github/pr-system-prompt.md
+.github/ai-pr/prompt.md
 ```
 
 ### ✨ Basic Prompt Structure
@@ -89,7 +89,7 @@ Analyze the Git diff and fill out PR template sections with helpful information 
 
 ### File Location
 ```
-.github/pr-rules.json
+.github/ai-pr/rules.json
 ```
 
 ### Basic Structure
@@ -142,7 +142,7 @@ Analyze the Git diff and fill out PR template sections with helpful information 
 }
 ```
 
-#### Multiple Rules Example
+#### Complete Configuration Example
 ```json
 {
   "rules": [
@@ -154,7 +154,42 @@ Analyze the Git diff and fill out PR template sections with helpful information 
       "pattern": "#(\\\\d+)",
       "targetSection": "## GitHub Issues"
     }
-  ]
+  ],
+  "templateSelection": {
+    "rules": [
+      {
+        "condition": "pr_title",
+        "pattern": "^\\\\[HOTFIX\\\\]|^HOTFIX:",
+        "template": "hotfix",
+        "priority": 1
+      },
+      {
+        "condition": "pr_title", 
+        "pattern": "^\\\\[FEAT\\\\]|^feat:|^feature:",
+        "template": "feature",
+        "priority": 2
+      },
+      {
+        "condition": "branch",
+        "pattern": "hotfix/|fix/",
+        "template": "hotfix", 
+        "priority": 3
+      },
+      {
+        "condition": "branch",
+        "pattern": "feature/|feat/",
+        "template": "feature", 
+        "priority": 4
+      },
+      {
+        "condition": "commit",
+        "pattern": "^fix:|^hotfix:",
+        "template": "hotfix",
+        "priority": 5
+      }
+    ],
+    "defaultTemplate": "feature"
+  }
 }
 ```
 
@@ -168,17 +203,64 @@ Analyze the Git diff and fill out PR template sections with helpful information 
 | Branch Type | `(feature\\|hotfix)/(\\\\w+)` | feature/login |
 | Any Ticket  | `([A-Z]{2,}-\\\\d+)`   | ABC-123          |
 
+### 🎯 Template Selection Rules
+
+The `templateSelection` section allows you to automatically choose PR templates based on:
+
+#### Supported Conditions
+- **`pr_title`** - Matches against PR title (highest priority)
+- **`branch`** - Matches against branch name  
+- **`commit`** - Matches against latest commit message
+
+#### Priority System
+- Lower numbers = higher priority (1 is highest)
+- Rules are checked in priority order
+- First matching rule wins
+- Falls back to `defaultTemplate` if no matches
+
+#### Common Patterns
+
+**PR Title Patterns:**
+```json
+{
+  "condition": "pr_title",
+  "pattern": "^\\[HOTFIX\\]|^HOTFIX:",  // [HOTFIX] or HOTFIX:
+  "template": "hotfix"
+}
+```
+
+**Branch Name Patterns:**
+```json
+{
+  "condition": "branch", 
+  "pattern": "feature/|feat/|dev/",     // feature/, feat/, dev/
+  "template": "feature"
+}
+```
+
+**Commit Message Patterns:**
+```json
+{
+  "condition": "commit",
+  "pattern": "^fix:|^hotfix:|^patch:",  // fix:, hotfix:, patch:
+  "template": "hotfix"  
+}
+```
+
 ---
 
 ## 📋 Template Design
 
 ### File Structure
 ```
-.github/pull_request_templates/
-├── feature.md
-├── hotfix.md
-├── release.md
-└── bugfix.md
+.github/ai-pr/
+├── rules.json
+├── prompt.md
+└── templates/
+    ├── feature.md
+    ├── hotfix.md
+    ├── release.md
+    └── bugfix.md
 ```
 
 ### ✨ Effective Template Structure
