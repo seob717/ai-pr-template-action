@@ -66,7 +66,7 @@ export class AIProviderService {
           throw new Error(`Unsupported AI provider: ${this.provider}`);
       }
     } catch (error) {
-      console.error(`${this.provider} API 호출 실패:`, error.message);
+      console.error(`${this.provider} API call failed:`, error.message);
       return null;
     }
   }

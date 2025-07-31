@@ -1,5 +1,5 @@
 name: 'AI PR Template Generator'
-description: 'Automatically generate and fill PR templates using Claude AI based on git diff analysis'
+description: 'Automatically generate and fill PR templates using AI providers based on git diff analysis'
 author: 'seob717'
 
 inputs:

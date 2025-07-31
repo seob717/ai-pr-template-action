@@ -28,7 +28,7 @@ export class GitService {
     try {
       return execSync("git log -1 --pretty=%s", { encoding: "utf8" }).trim();
     } catch (error) {
-      console.warn("PR 제목을 가져올 수 없습니다:", error.message);
+      console.warn("Unable to get PR title:", error.message);
       return "";
     }
   }
@@ -47,7 +47,7 @@ export class GitService {
         encoding: "utf8",
       }).trim();
     } catch (error) {
-      console.warn("로컬 Git에서 커밋 메시지를 가져오는 데 실패했습니다:", error.message);
+      console.warn("Failed to get commit messages from local Git:", error.message);
       // Fallback: get only last commit message
       return execSync("git log -1 --pretty=%B", { encoding: "utf8" }).trim();
     }
@@ -57,7 +57,7 @@ export class GitService {
   async getCommitMessages() {
     if (this.octokit && github.context.payload.pull_request) {
       try {
-        console.log("GitHub API를 통해 PR의 커밋 목록을 가져옵니다.");
+        console.log("Getting PR commit list via GitHub API.");
         const { owner, repo } = github.context.repo;
         const pull_number = github.context.payload.pull_request.number;
 
@@ -68,11 +68,11 @@ export class GitService {
 
         return commits.map((commit) => commit.commit.message).join("\n");
       } catch (error) {
-        console.warn("GitHub API 호출 실패, 로컬 Git으로 대체합니다:", error.message);
+        console.warn("GitHub API call failed, falling back to local Git:", error.message);
         return this.getCommitMessagesFromLocalGit();
       }
     } else {
-      console.log("로컬 Git에서 커밋 메시지를 가져옵니다.");
+      console.log("Getting commit messages from local Git.");
       return this.getCommitMessagesFromLocalGit();
     }
   }
@@ -103,7 +103,7 @@ export class GitService {
       }
     }
 
-    console.log(`GitHub API로 ${files.length}개 파일의 변경사항을 가져왔습니다.`);
+    console.log(`Retrieved changes for ${files.length} files via GitHub API.`);
     return { diff, changedFiles };
   }
 
@@ -117,11 +117,11 @@ export class GitService {
         const headSha = github.context.payload.pull_request.head.sha;
         diffCommand = `git diff ${baseSha}..${headSha}`;
         nameOnlyCommand = `git diff --name-only ${baseSha}..${headSha}`;
-        console.log(`로컬 Git PR diff: ${baseSha}..${headSha}`);
+        console.log(`Local Git PR diff: ${baseSha}..${headSha}`);
       } else {
         diffCommand = "git diff HEAD~1..HEAD";
         nameOnlyCommand = "git diff --name-only HEAD~1..HEAD";
-        console.log("로컬 Git diff: HEAD~1..HEAD");
+        console.log("Local Git diff: HEAD~1..HEAD");
       }
 
       const diff = execSync(diffCommand, { encoding: "utf8" });
@@ -131,7 +131,7 @@ export class GitService {
 
       return { diff, changedFiles };
     } catch (error) {
-      console.error("로컬 Git diff 분석 실패:", error.message);
+      console.error("Local Git diff analysis failed:", error.message);
       return { diff: "", changedFiles: [] };
     }
   }
@@ -140,14 +140,14 @@ export class GitService {
   async getGitDiff() {
     if (this.octokit && github.context.payload.pull_request) {
       try {
-        console.log("GitHub API를 통해 PR diff를 가져옵니다.");
+        console.log("Getting PR diff via GitHub API.");
         return await this.getGitDiffFromGitHub();
       } catch (error) {
-        console.warn("GitHub API로 diff 가져오기 실패, 로컬 Git으로 대체:", error.message);
+        console.warn("GitHub API diff retrieval failed, falling back to local Git:", error.message);
         return this.getGitDiffFromLocal();
       }
     } else {
-      console.log("로컬 Git에서 diff를 가져옵니다.");
+      console.log("Getting diff from local Git.");
       return this.getGitDiffFromLocal();
     }
   }

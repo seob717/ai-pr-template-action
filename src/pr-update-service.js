@@ -38,11 +38,11 @@ export class PRUpdateService {
     }
   }
 
-  // Create user prompt for AI
+  // Create user prompt for AI  
   createUserPrompt(diff, changedFiles, template) {
-    return `다음 Git Diff와 변경된 파일 목록을 분석하여, 시스템 프롬프트의 지침에 따라 PR 템플릿의 각 \`<!-- AI가 자동으로 채워줍니다 -->\` 섹션을 채워주세요.
+    return `Analyze the following Git Diff and changed files list, then fill in each \`<!-- AI will fill this automatically -->\` section of the PR template according to the system prompt guidelines.
 
-**변경된 파일:**
+**Changed Files:**
 \`\`\`
 ${changedFiles.join("\n")}
 \`\`\`
@@ -52,7 +52,7 @@ ${changedFiles.join("\n")}
 ${diff}
 \`\`\`
 
-**PR 템플릿 (이 템플릿의 플레이스홀더를 채워주세요):**
+**PR Template (Please fill in the placeholders in this template):**
 ${template}
 `;
   }

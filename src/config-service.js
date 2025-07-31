@@ -51,7 +51,7 @@ export class ConfigService {
       try {
         return fs.readFileSync(systemPromptPath, "utf8");
       } catch (error) {
-        console.error("시스템 프롬프트 파일 로드 실패:", error.message);
+        console.error("Failed to load system prompt file:", error.message);
       }
     }
     

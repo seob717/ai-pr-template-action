@@ -160,20 +160,20 @@ export const DEFAULT_COMMIT_PATTERNS = {
 export const OUTPUT_FILENAME = "pr-template-output.md";
 
 export const ERROR_MESSAGES = {
-  noChanges: "변경사항이 없습니다.",
+  noChanges: "No changes detected.",
   noApiKey: "⚠️ No API key found. Will use basic template without AI generation.",
-  aiGenerationFailed: "⚠️ AI 생성 실패, 기본 템플릿만 사용합니다.",
-  templateSelectionFailed: "템플릿 선택 실패:",
-  ruleLoadFailed: "규칙 파일 로드 또는 파싱 실패:",
-  gitDiffFailed: "로컬 Git diff 분석 실패:",
+  aiGenerationFailed: "⚠️ AI generation failed, using basic template only.",
+  templateSelectionFailed: "Template selection failed:",
+  ruleLoadFailed: "Rule file loading or parsing failed:",
+  gitDiffFailed: "Local Git diff analysis failed:",
   vertexAiProjectIdRequired: "PROJECT_ID environment variable is required for Vertex AI"
 };
 
 export const SUCCESS_MESSAGES = {
-  generationStarted: "🤖 AI PR Template Generator 시작...",
-  templateSelected: "📋 선택된 템플릿:",
-  aiGenerating: "🧠 AI로 내용 생성 중...",
-  generationComplete: "✅ PR 템플릿 생성 완료",
-  githubApiSuccess: "GitHub API를 통해 PR diff를 가져옵니다.",
-  localGitFallback: "로컬 Git에서 diff를 가져옵니다."
+  generationStarted: "🤖 AI PR Template Generator starting...",
+  templateSelected: "📋 Selected template:",
+  aiGenerating: "🧠 Generating content with AI...",
+  generationComplete: "✅ PR template generation complete",
+  githubApiSuccess: "Getting PR diff via GitHub API.",
+  localGitFallback: "Getting diff from local Git."
 };

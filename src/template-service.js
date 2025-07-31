@@ -59,7 +59,7 @@ export class TemplateService {
       }
 
       if (testValue && new RegExp(pattern, "i").test(testValue)) {
-        console.log(`템플릿 선택 규칙 매치: ${condition}="${testValue}" -> ${template}`);
+        console.log(`Template selection rule matched: ${condition}="${testValue}" -> ${template}`);
         return template;
       }
     }
@@ -96,7 +96,7 @@ export class TemplateService {
     }
 
     // Create default template
-    console.log(`템플릿 파일이 없어서 기본 템플릿을 생성합니다: ${templatePath}`);
+    console.log(`Template file not found, creating default template: ${templatePath}`);
     return this.createDefaultTemplate(templateName);
   }
 
@@ -120,7 +120,7 @@ export class TemplateService {
         if (sectionRegex.test(filledTemplate)) {
           // Section exists, replace placeholder
           const placeholderRegex = new RegExp(
-            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-|해당\\s*없음)`,
+            `(${targetSection}(\\s*\\n)*?)(-\\s*\\n|-|N/A)`,
             "i"
           );
           if (placeholderRegex.test(filledTemplate)) {
@@ -133,7 +133,7 @@ export class TemplateService {
           filledTemplate += `\n\n${targetSection}\n${items}`;
         }
       } else {
-        // No extracted info, mark as "해당 없음"
+        // No extracted info, mark as "N/A"
         const sectionRegex = new RegExp(`(${targetSection})`, "i");
         if (sectionRegex.test(filledTemplate)) {
           const placeholderRegex = new RegExp(
@@ -141,7 +141,7 @@ export class TemplateService {
             "i"
           );
           if (placeholderRegex.test(filledTemplate)) {
-            filledTemplate = filledTemplate.replace(placeholderRegex, `$1해당 없음\n`);
+            filledTemplate = filledTemplate.replace(placeholderRegex, `$1N/A\n`);
           }
         }
       }
