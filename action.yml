@@ -157,7 +157,7 @@ runs:
         - Template files exist in the configured path
         
         ---
-        *🤖 AI PR Template Generator*"
+        *🤖 AI PR Writer*"
 
         COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
         

@@ -1,4 +1,4 @@
-// Default configuration and templates for AI PR Template Generator
+// Default configuration and templates for AI PR Writer
 
 export const DEFAULT_PATHS = {
   templateDir: ".github/ai-pr/templates",
@@ -170,7 +170,7 @@ export const ERROR_MESSAGES = {
 };
 
 export const SUCCESS_MESSAGES = {
-  generationStarted: "🤖 AI PR Template Generator starting...",
+  generationStarted: "🤖 AI PR Writer starting...",
   templateSelected: "📋 Selected template:",
   aiGenerating: "🧠 Generating content with AI...",
   generationComplete: "✅ PR template generation complete",

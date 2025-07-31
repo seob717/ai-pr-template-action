@@ -1,6 +1,6 @@
 # 📚 Best Practices Guide
 
-Advanced configuration and optimization tips for AI PR Template Generator.
+Advanced configuration and optimization tips for AI PR Writer.
 
 ## 📋 Table of Contents
 
@@ -447,7 +447,7 @@ console.log(text.match(pattern)); // ["PROJ-1234"]
 #### Enable Debug Logging
 ```yaml
 - name: Generate AI PR Template
-  uses: seob717/ai-pr-template-action@v1
+  uses: seob717/ai-pr-writer@v1
   env:
     ACTIONS_STEP_DEBUG: true
 ```
