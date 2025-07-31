@@ -49,7 +49,9 @@ class PRTemplateGenerator {
     this.aiProvider = process.env.AI_PROVIDER || "claude";
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
-    this.rules = this.loadRules();
+    const rulesData = this.loadRules();
+    this.rules = rulesData.rules || [];
+    this.templateSelectionRules = rulesData.templateSelection || { rules: [], defaultTemplate: "feature" };
 
     this.githubToken = process.env.GITHUB_TOKEN;
     if (this.githubToken) {
@@ -129,13 +131,13 @@ class PRTemplateGenerator {
     if (fs.existsSync(this.rulesPath)) {
       try {
         const content = fs.readFileSync(this.rulesPath, "utf8");
-        return JSON.parse(content).rules || [];
+        return JSON.parse(content);
       } catch (error) {
         console.error("규칙 파일 로드 또는 파싱 실패:", error.message);
-        return [];
+        return { rules: [], templateSelection: { rules: [], defaultTemplate: "feature" } };
       }
     }
-    return [];
+    return { rules: [], templateSelection: { rules: [], defaultTemplate: "feature" } };
   }
 
   // 관련 Git 커밋 메시지 가져오기
@@ -279,8 +281,78 @@ class PRTemplateGenerator {
     }
   }
 
-  // 브랜치명이나 커밋 메시지로 템플릿 선택
+  // PR 제목 가져오기
+  getPRTitle() {
+    // GitHub Actions PR 컨텍스트에서 PR 제목 가져오기
+    if (github.context.payload.pull_request) {
+      return github.context.payload.pull_request.title || "";
+    }
+    
+    // 로컬 실행 시 폴백 (첫 번째 커밋 메시지 활용)
+    try {
+      return execSync("git log -1 --pretty=%s", { encoding: "utf8" }).trim();
+    } catch (error) {
+      console.warn("PR 제목을 가져올 수 없습니다:", error.message);
+      return "";
+    }
+  }
+
+  // 규칙 기반 템플릿 선택
   selectTemplate() {
+    try {
+      // 규칙이 없으면 기본 로직 사용
+      if (!this.templateSelectionRules.rules || this.templateSelectionRules.rules.length === 0) {
+        return this.selectTemplateByDefault();
+      }
+
+      const prTitle = this.getPRTitle();
+      const branchName = execSync("git branch --show-current", {
+        encoding: "utf8",
+      }).trim();
+      const lastCommit = execSync("git log -1 --pretty=%B", {
+        encoding: "utf8",
+      }).trim();
+
+      // 우선순위로 정렬
+      const sortedRules = [...this.templateSelectionRules.rules].sort(
+        (a, b) => (a.priority || 999) - (b.priority || 999)
+      );
+
+      // 각 규칙에 대해 테스트
+      for (const rule of sortedRules) {
+        const { condition, pattern, template } = rule;
+        let testValue = "";
+
+        switch (condition) {
+          case "pr_title":
+            testValue = prTitle;
+            break;
+          case "branch":
+            testValue = branchName;
+            break;
+          case "commit":
+            testValue = lastCommit;
+            break;
+          default:
+            continue;
+        }
+
+        if (testValue && new RegExp(pattern, "i").test(testValue)) {
+          console.log(`템플릿 선택 규칙 매치: ${condition}="${testValue}" -> ${template}`);
+          return template;
+        }
+      }
+
+      // 매치되는 규칙이 없으면 기본 템플릿 사용
+      return this.templateSelectionRules.defaultTemplate || "feature";
+    } catch (error) {
+      console.error("템플릿 선택 실패:", error.message);
+      return this.templateSelectionRules.defaultTemplate || "feature";
+    }
+  }
+
+  // 기본 템플릿 선택 로직 (하위 호환성)
+  selectTemplateByDefault() {
     try {
       const branchName = execSync("git branch --show-current", {
         encoding: "utf8",
@@ -305,7 +377,7 @@ class PRTemplateGenerator {
 
       return "feature"; // 기본값
     } catch (error) {
-      console.error("템플릿 선택 실패:", error.message);
+      console.error("기본 템플릿 선택 실패:", error.message);
       return "feature";
     }
   }

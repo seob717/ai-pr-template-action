@@ -1,0 +1,43 @@
+{
+  "rules": [
+    {
+      "pattern": "(DD-\\d+)",
+      "targetSection": "## Jira Tickets"
+    }
+  ],
+  "templateSelection": {
+    "rules": [
+      {
+        "condition": "pr_title",
+        "pattern": "^\\[HOTFIX\\]|^HOTFIX:",
+        "template": "hotfix",
+        "priority": 1
+      },
+      {
+        "condition": "pr_title", 
+        "pattern": "^\\[FEAT\\]|^feat:|^feature:",
+        "template": "feature",
+        "priority": 2
+      },
+      {
+        "condition": "pr_title",
+        "pattern": "^\\[FIX\\]|^fix:",
+        "template": "bugfix", 
+        "priority": 3
+      },
+      {
+        "condition": "branch",
+        "pattern": "hotfix/",
+        "template": "hotfix",
+        "priority": 4
+      },
+      {
+        "condition": "branch",
+        "pattern": "feature/|feat/",
+        "template": "feature", 
+        "priority": 5
+      }
+    ],
+    "defaultTemplate": "feature"
+  }
+}

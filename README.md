@@ -253,23 +253,75 @@ To automatically extract and place information like Jira tickets, create a `.git
 
 ## 🎯 Template Selection Logic
 
-The action automatically selects templates based on:
+The action supports two template selection methods:
 
-### Branch Name Patterns
+### 🔧 **Customizable Template Selection** (New!)
 
+You can now customize template selection rules by adding a `templateSelection` section to your `.github/pr-rules.json`:
+
+```json
+{
+  "rules": [
+    // ... existing information extraction rules
+  ],
+  "templateSelection": {
+    "rules": [
+      {
+        "condition": "pr_title",
+        "pattern": "^\\[HOTFIX\\]|^HOTFIX:",
+        "template": "hotfix",
+        "priority": 1
+      },
+      {
+        "condition": "pr_title", 
+        "pattern": "^\\[FEAT\\]|^feat:|^feature:",
+        "template": "feature",
+        "priority": 2
+      },
+      {
+        "condition": "branch",
+        "pattern": "feature/|feat/",
+        "template": "feature", 
+        "priority": 3
+      },
+      {
+        "condition": "commit",
+        "pattern": "^fix:",
+        "template": "bugfix",
+        "priority": 4
+      }
+    ],
+    "defaultTemplate": "feature"
+  }
+}
+```
+
+**Supported Conditions:**
+- `pr_title` - Matches against PR title (highest priority for intentional selection)
+- `branch` - Matches against branch name
+- `commit` - Matches against the latest commit message
+
+**Priority System:**
+- Lower numbers = higher priority
+- Rules are checked in priority order
+- First matching rule wins
+
+### 📋 **Default Template Selection** (Fallback)
+
+If no custom rules are defined, uses these default patterns:
+
+**Branch Name Patterns:**
 - `feature/`, `feat/` → `feature.md`
 - `hotfix/` → `hotfix.md`
 - `release/` → `release.md`
 - `bugfix/`, `bug/` → `bugfix.md`
 
-### Commit Message Prefixes
-
+**Commit Message Prefixes:**
 - `feat:`, `feature:` → `feature.md`
 - `fix:`, `hotfix:` → `hotfix.md` or `bugfix.md`
 - `release:` → `release.md`
 
-### Fallback
-
+**Fallback:**
 - Uses `default-template` if no pattern matches
 
 ## 📝 Template Structure
