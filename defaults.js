@@ -9,6 +9,7 @@ export const DEFAULT_PATHS = {
 export const DEFAULT_CONFIG = {
   aiProvider: "claude",
   defaultTemplate: "feature",
+  updateMode: "create-only",
   mainBranch: "main",
   maxTokens: 1000,
   temperature: 0.7,

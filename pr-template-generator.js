@@ -54,6 +54,7 @@ class PRTemplateGenerator {
     this.aiProvider = process.env.AI_PROVIDER || DEFAULT_CONFIG.aiProvider;
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
+    this.updateMode = process.env.UPDATE_MODE || DEFAULT_CONFIG.updateMode;
     const rulesData = this.loadRules();
     this.rules = rulesData.rules || [];
     this.templateSelectionRules = rulesData.templateSelection || DEFAULT_RULES.templateSelection;
@@ -621,6 +622,27 @@ ${template}
     return extractedInfo;
   }
 
+  // PR 업데이트 여부 결정
+  shouldUpdatePRBody() {
+    if (!github.context.payload.pull_request) {
+      return false;
+    }
+
+    const prAction = github.context.payload.action;
+    const currentBody = github.context.payload.pull_request.body || "";
+
+    switch (this.updateMode) {
+      case "always":
+        return true;
+      case "create-only":
+        return prAction === "opened" || currentBody.trim() === "";
+      case "comment-only":
+        return false;
+      default:
+        return prAction === "opened" || currentBody.trim() === "";
+    }
+  }
+
   // 메인 실행 함수
   async generate() {
     try {
@@ -672,10 +694,17 @@ ${template}
         extractedInfo
       );
 
-      // 5. 파일로 저장
-      fs.writeFileSync(OUTPUT_FILENAME, finalContent);
+      // 5. 업데이트 모드에 따라 처리
+      const shouldUpdate = this.shouldUpdatePRBody();
+      this.setOutput("should-update-body", shouldUpdate.toString());
+      
+      if (shouldUpdate || this.updateMode === "comment-only") {
+        fs.writeFileSync(OUTPUT_FILENAME, finalContent);
+      }
+      
       this.setOutput("content-generated", "true");
-
+      console.log(`📝 Update mode: ${this.updateMode}`);
+      console.log(`🔄 Should update PR body: ${shouldUpdate}`);
       console.log(SUCCESS_MESSAGES.generationComplete);
 
       return finalContent;

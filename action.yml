@@ -44,6 +44,10 @@ inputs:
     description: 'Google Cloud location/region (default: us-central1)'
     required: false
     default: 'us-central1'
+  update-mode:
+    description: 'When to update PR body: always, create-only, comment-only'
+    required: false
+    default: 'create-only'
 
 outputs:
   template-used:
@@ -52,6 +56,9 @@ outputs:
   content-generated:
     description: 'Whether AI content was successfully generated (true/false)'
     value: ${{ steps.generate.outputs.content-generated }}
+  should-update-body:
+    description: 'Whether PR body should be updated based on update-mode'
+    value: ${{ steps.generate.outputs.should-update-body }}
 
 runs:
   using: 'composite'
@@ -84,12 +91,13 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         TEMPLATE_PATH: ${{ inputs.template-path }}
         DEFAULT_TEMPLATE: ${{ inputs.default-template }}
+        UPDATE_MODE: ${{ inputs.update-mode }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         node ${{ github.action_path }}/pr-template-generator.js
         
     - name: Update PR Description
-      if: steps.generate.outputs.content-generated == 'true'
+      if: steps.generate.outputs.content-generated == 'true' && steps.generate.outputs.should-update-body == 'true'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}

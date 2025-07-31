@@ -142,6 +142,7 @@ model: "claude-3-5-sonnet-20241022"
 | `api-key` | API key for the selected provider | ✅ | - |
 | `model` | Specific model name | ❌ | Provider default |
 | `template-path` | Custom path to templates directory | ❌ | `.github/ai-pr/templates` |
+| `update-mode` | When to update PR body (`always`, `create-only`, `comment-only`) | ❌ | `create-only` |
 | `github-token` | GitHub token for PR updates | ✅ | `${{ secrets.GITHUB_TOKEN }}` |
 
 ### Outputs
@@ -150,8 +151,29 @@ model: "claude-3-5-sonnet-20241022"
 |--------|-------------|
 | `template-used` | Template that was selected |  
 | `content-generated` | Whether AI content was generated |
+| `should-update-body` | Whether PR body should be updated |
 
 ## 🛠️ Advanced Features
+
+### Update Modes
+
+Control when PR descriptions are updated:
+
+```yaml
+# Always update PR body (every push)
+update-mode: "always"
+
+# Only update when PR is created or body is empty (default)
+update-mode: "create-only"  
+
+# Never update PR body, only add comments
+update-mode: "comment-only"
+```
+
+**Use cases:**
+- `always` - For teams that want AI to always refresh descriptions
+- `create-only` - Respects manual edits, only fills empty descriptions  
+- `comment-only` - Non-intrusive, adds AI suggestions as comments
 
 ### Advanced Configuration
 
