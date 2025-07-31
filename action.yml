@@ -124,14 +124,14 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
-        COMMENT_BODY="🤖 **AI PR Template Generator**
+        COMMENT_BODY="🎉 **PR Template Generated!**
         
-        ✅ Successfully generated PR template using **${{ steps.generate.outputs.template-used }}** template.
+        I've automatically filled out your PR description using the **${{ steps.generate.outputs.template-used }}** template. 
         
-        The PR description has been automatically updated. Please review and modify as needed.
+        Feel free to review and adjust anything that needs tweaking!
         
         ---
-        *Powered by Claude AI*"
+        *✨ Generated with AI assistance*"
 
         # Escape for JSON
         COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
@@ -149,15 +149,15 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
-        COMMENT_BODY="🤖 **AI PR Template Generator**
+        COMMENT_BODY="😅 **Oops! Template Generation Failed**
         
-        ❌ Failed to generate PR template. Please check:
-        - Anthropic API key is valid
-        - There are actual changes in the PR
-        - Template files exist in the specified path
+        Something went wrong while generating your PR template. Here are a few things to check:
+        - Your AI provider API key is valid
+        - There are actual code changes in this PR
+        - Template files exist in the configured path
         
         ---
-        *Powered by Claude AI*"
+        *🤖 AI PR Template Generator*"
 
         COMMENT_JSON=$(echo "$COMMENT_BODY" | jq -Rs .)
         
