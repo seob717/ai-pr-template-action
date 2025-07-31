@@ -85,6 +85,7 @@ runs:
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         GOOGLE_API_KEY: ${{ inputs.google-api-key }}
         VERTEX_AI_API_KEY: ${{ inputs.vertex-ai-api-key }}
+        GROQ_API_KEY: ${{ inputs.api-key }}
         MODEL: ${{ inputs.model }}
         PROJECT_ID: ${{ inputs.project-id }}
         LOCATION: ${{ inputs.location }}
@@ -152,9 +153,9 @@ runs:
         COMMENT_BODY="😅 **Oops! Template Generation Failed**
         
         Something went wrong while generating your PR template. Here are a few things to check:
-        - Your AI provider API key is valid
+        - Your **${{ inputs.ai-provider }}** API key is valid and properly configured
         - There are actual code changes in this PR
-        - Template files exist in the configured path
+        - Template files exist in the configured path: **${{ inputs.template-path }}**
         
         ---
         *🤖 AI PR Writer*"
