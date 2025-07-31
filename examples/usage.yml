@@ -1,6 +1,3 @@
-# Example workflow file for AI PR Writer
-# Place this in your repository at: .github/workflows/ai-pr-template.yml
-
 name: AI PR Template
 
 on:
@@ -13,45 +10,15 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-          
+
       - name: Generate AI PR Template
-        id: ai-pr-template
         uses: seob717/ai-pr-writer@v1
         with:
-          # 🆓 Free option (recommended for most users)
-          ai-provider: "groq"
+          ai-provider: 'groq'
           api-key: ${{ secrets.GROQ_API_KEY }}
-          model: "llama-3.1-70b-versatile"
+          model: 'llama-3.3-70b-versatile'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update PR Body
-        if: steps.ai-pr-template.outputs.content-generated == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const prBody = fs.readFileSync('pr-template-output.md', 'utf8');
-            
-            await github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              body: prBody
-            });
-
-# Alternative configurations:
-
-# 🏢 Enterprise (Vertex AI)
-# ai-provider: "vertex-ai"
-# api-key: ${{ secrets.VERTEX_AI_API_KEY }}
-# project-id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
-# model: "gemini-1.5-pro"
-
-# 🔒 Privacy-focused (Claude)  
-# ai-provider: "claude"
-# api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-# model: "claude-3-5-sonnet-20241022"
