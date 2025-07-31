@@ -1,19 +1,22 @@
-## 🎯 Feature Description
+## 🎯 What does this PR do?
 
-<!-- AI가 자동으로 채워줍니다 -->
+<!-- AI will fill this automatically -->
 
 ## 🔄 Changes Made
 
-<!-- AI가 자동으로 채워줍니다 -->
+<!-- AI will fill this automatically -->
 
-## Jira Tickets
+## 🔗 Related Issues
 
--
+- Closes #
+- Related to #
 
 ## 🧪 Testing
 
+- [ ] Unit tests added/updated
 - [ ] Manual testing completed
+- [ ] All tests pass
 
-## 📝 Notes for Reviewers
+## 📝 Review Notes
 
-<!-- AI가 자동으로 채워줍니다 -->
+<!-- AI will fill this automatically -->

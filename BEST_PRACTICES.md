@@ -1,101 +1,86 @@
-# AI PR Template Action - Best Practices Guide
+# 📚 Best Practices Guide
 
-이 가이드는 AI PR Template Action을 효과적으로 사용하기 위한 최적화된 설정 방법과 모범 사례를 제공합니다.
+Advanced configuration and optimization tips for AI PR Template Generator.
 
-## 📋 목차
+## 📋 Table of Contents
 
-- [시스템 프롬프트 작성 가이드](#시스템-프롬프트-작성-가이드)
-- [PR 규칙 파일 설정](#pr-규칙-파일-설정)
-- [템플릿 구조 설계](#템플릿-구조-설계)
-- [워크플로우 최적화](#워크플로우-최적화)
-- [문제 해결 가이드](#문제-해결-가이드)
+- [Writing Effective System Prompts](#writing-effective-system-prompts)
+- [Setting Up PR Rules](#setting-up-pr-rules)
+- [Template Design](#template-design)
+- [Workflow Optimization](#workflow-optimization)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-## 🎯 시스템 프롬프트 작성 가이드
+## 🎯 Writing Effective System Prompts
 
-### 파일 위치
-
+### File Location
 ```
 .github/pr-system-prompt.md
 ```
 
-### 🌟 효과적인 프롬프트 구조
+### ✨ Basic Prompt Structure
 
 ```markdown
-당신은 [회사명/팀명]의 숙련된 시니어 개발자입니다.
-Git Diff 정보를 분석하여 Pull Request 템플릿을 자동으로 작성해주세요.
+You are a senior developer at [Company/Team Name].
+Analyze the Git diff and fill out the PR template sections.
 
-### 작성 규칙
+**Guidelines:**
+- Write in clear, professional English
+- Keep the markdown structure intact
+- Replace only the AI placeholder comments
+- Focus on what matters to reviewers
 
-- **언어**: 반드시 [한국어/영어]로 작성
-- **톤**: [공식적/친근한/기술적] 톤으로 작성
-- **구조**: 제공된 마크다운 템플릿 구조를 반드시 유지
-
-### 섹션별 가이드라인
-
-#### [섹션명 1]
-
-- 구체적인 작성 지침
-- 예시와 함께 설명
-
-#### [섹션명 2]
-
-- 해당 섹션의 목적과 중요성
-- 작성 시 주의사항
-
-### 금지사항
-
-- ❌ [특정 문구나 표현]은 절대 사용 금지
-- ❌ 설명적 서술문 추가 금지
-- ❌ 템플릿 구조 변경 금지
-
-### 언어 사용 가이드 (한국어 사용 시)
-
-- "업데이트" ✅ / "更新" ❌
-- "동작" ✅ / "動作" ❌
-- "확인" ✅ / "確認" ❌
+**Style:**
+- Be concise and direct
+- Use bullet points for lists
+- Highlight important changes
+- Mention potential risks or impacts
 ```
 
-### 📝 실제 예시 템플릿
+### 🎨 Customization Examples
+
+**For Frontend Teams:**
+```markdown
+Focus on UI/UX changes, accessibility improvements, and browser compatibility.
+Mention any visual changes and testing requirements.
+```
+
+**For Backend Teams:**
+```markdown
+Highlight API changes, database migrations, performance impacts, and security considerations.
+```
+
+**For DevOps Teams:**
+```markdown
+Emphasize infrastructure changes, deployment impacts, and monitoring requirements.
+```
+
+### 💡 Complete Example
 
 ```markdown
-당신은 스타트업 개발팀의 숙련된 시니어 엔지니어입니다.
-Git Diff 정보를 분석하여 Pull Request 템플릿을 자동으로 작성해주세요.
+You are a senior software engineer reviewing code changes.
 
-### 작성 규칙
+**Your Task:**
+Analyze the Git diff and fill out PR template sections with helpful information for reviewers.
 
-- **언어**: 반드시 순수 한국어로 작성 (한자 사용 금지)
-- **톤**: 간결하고 기술적인 톤으로 작성
-- **구조**: 제공된 마크다운 템플릿 구조를 반드시 유지
+**Writing Style:**
+- Clear and concise technical writing
+- Use bullet points for easy scanning
+- Highlight breaking changes or important updates
+- Suggest specific review focus areas
 
-### 섹션별 가이드라인
+**Section Guidelines:**
 
-#### 리뷰 요약 정보
+**Summary:** Brief overview of what this PR accomplishes
+**Changes:** List key technical changes with file paths when relevant  
+**Testing:** Mention test coverage and manual testing needs
+**Review Notes:** Point out complex logic, potential risks, or areas needing extra attention
 
-- **예상 리뷰 소요 시간**: 코드 변경량을 고려해 '5분', '15분', '30분', '1시간' 중 선택
-- **희망 리뷰 마감 기한**: 우선순위에 따라 '오늘 오후까지', '내일 오전까지' 등으로 설정
-
-#### 릴리즈 내용
-
-- **지라 티켓 없는 배포 사항**: 핵심 기능만 3-5개 불렛 포인트로 요약
-- **개발 변경 사항**: 파일 경로와 함께 기술적 변경사항 나열
-
-#### 주요 변경점
-
-- 사용자 관점에서 체감할 수 있는 변화 중심으로 작성
-- 최대 5개 항목으로 제한
-
-#### 검토자가 알아야 할 사항
-
-- 잠재적 사이드 이펙트나 주의사항 위주로 작성
-- 특별한 테스트가 필요한 부분 명시
-
-### 금지사항
-
-- ❌ "다음 변경 사항들은 Jira 티켓과 연결되지 않았습니다" 등의 설명문 추가 금지
-- ❌ 템플릿에 없는 새로운 섹션 추가 금지
-- ❌ 한자나 중국어 문자 사용 금지
+**Don't:**
+- Add explanatory text like "The following changes were made..."
+- Modify the template structure
+- Leave placeholder comments in the final output
 ```
 
 ---
@@ -448,14 +433,9 @@ console.log(text.match(pattern)); // ["DD-1234"]
 - [RegexPal](https://www.regexpal.com/) - 온라인 정규표현식 테스터
 - [Regex101](https://regex101.com/) - 상세한 정규표현식 분석
 
-### AI 모델 비교
+### AI Model Performance
 
-| 제공자    | 모델              | 무료 티어 | 기업용 보안 | 속도       | 품질       |
-| --------- | ----------------- | --------- | ----------- | ---------- | ---------- |
-| Groq      | llama-3.3-70b     | ✅        | ❌          | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐   |
-| Google    | gemini-1.5-flash  | ✅        | ⚠️          | ⭐⭐⭐⭐   | ⭐⭐⭐⭐   |
-| Vertex AI | gemini-1.5-pro    | ❌        | ✅          | ⭐⭐⭐     | ⭐⭐⭐⭐⭐ |
-| Claude    | claude-3-5-sonnet | ❌        | ✅          | ⭐⭐⭐     | ⭐⭐⭐⭐⭐ |
+For detailed model comparisons and benchmarks, see [Artificial Analysis](https://artificialanalysis.ai/models).
 
 ### 샘플 설정 파일들
 

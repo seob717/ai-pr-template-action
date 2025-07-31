@@ -1,25 +1,22 @@
-## 🚨 Issue Description
+## 🚨 What's the issue?
 
-<!-- Description of the bug being fixed -->
+<!-- AI will fill this automatically -->
 
-## 🔧 Fix Applied
+## 🔧 How is it fixed?
 
-<!-- AI-generated description of the fix -->
+<!-- AI will fill this automatically -->
 
-## ⏰ Urgency
+## ⏰ Urgency Level
 
 - [ ] Critical production issue
-- [ ] Affects user experience
+- [ ] Affects user experience  
 - [ ] Security vulnerability
+- [ ] Minor issue
 
-## 🧪 Verification
+## 🧪 How to verify the fix
 
-<!-- AI-generated testing suggestions -->
-
-## 📊 Impact Assessment
-
-<!-- AI-generated impact analysis -->
+<!-- AI will fill this automatically -->
 
 ## 🔗 Related Issues
 
-- Fixes #<!-- issue number -->
+- Fixes #
