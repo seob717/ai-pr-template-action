@@ -1,4 +1,4 @@
-name: 'AI PR Template Generator'
+name: 'AI PR Writer'
 description: 'Automatically generate and fill PR templates using AI providers based on git diff analysis'
 author: 'seob717'
 

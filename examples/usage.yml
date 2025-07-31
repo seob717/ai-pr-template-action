@@ -1,4 +1,4 @@
-# Example workflow file for AI PR Template Generator
+# Example workflow file for AI PR Writer
 # Place this in your repository at: .github/workflows/ai-pr-template.yml
 
 name: AI PR Template
@@ -20,7 +20,7 @@ jobs:
           
       - name: Generate AI PR Template
         id: ai-pr-template
-        uses: seob717/ai-pr-template-action@v1
+        uses: seob717/ai-pr-writer@v1
         with:
           # 🆓 Free option (recommended for most users)
           ai-provider: "groq"

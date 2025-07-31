@@ -1,5 +1,5 @@
 {
-  "name": "ai-pr-template-action",
+  "name": "ai-pr-writer",
   "version": "1.0.0",
   "description": "Automatically generate PR templates using AI providers based on git diff analysis",
   "main": "pr-template-generator.js",
@@ -27,10 +27,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/seob717/ai-pr-template-action"
+    "url": "https://github.com/seob717/ai-pr-writer"
   },
   "bugs": {
-    "url": "https://github.com/seob717/ai-pr-template-action/issues"
+    "url": "https://github.com/seob717/ai-pr-writer/issues"
   },
-  "homepage": "https://github.com/seob717/ai-pr-template-action#readme"
+  "homepage": "https://github.com/seob717/ai-pr-writer#readme"
 }

@@ -1,7 +1,7 @@
-# AI PR Template Generator
+# AI PR Writer
 
-[![GitHub release](https://img.shields.io/github/release/seob717/ai-pr-template-action.svg)](https://github.com/seob717/ai-pr-template-action/releases)
-[![GitHub marketplace](https://img.shields.io/badge/marketplace-ai--pr--template--generator-blue?logo=github)](https://github.com/marketplace/actions/ai-pr-template-generator)
+[![GitHub release](https://img.shields.io/github/release/seob717/ai-pr-writer.svg)](https://github.com/seob717/ai-pr-writer/releases)
+[![GitHub marketplace](https://img.shields.io/badge/marketplace-ai--pr--writer-blue?logo=github)](https://github.com/marketplace/actions/ai-pr-writer)
 
 Automatically generate and fill PR templates using AI. Analyzes your code changes and intelligently fills out PR template sections, saving time and ensuring consistent documentation.
 
@@ -69,7 +69,7 @@ jobs:
 
       - name: Generate AI PR Template
         id: ai-pr-template
-        uses: seob717/ai-pr-template-action@v1
+        uses: seob717/ai-pr-writer@v1
         with:
           ai-provider: "groq"
           api-key: ${{ secrets.GROQ_API_KEY }}
@@ -247,7 +247,7 @@ The action automatically selects templates based on:
 
 - 📖 [Getting Started Guide](GETTING_STARTED.md) - 5-minute setup
 - 📚 [Best Practices Guide](BEST_PRACTICES.md) - Advanced configuration
-- 🐛 [Report Issues](https://github.com/seob717/ai-pr-template-action/issues)
+- 🐛 [Report Issues](https://github.com/seob717/ai-pr-writer/issues)
 
 ## 📄 License
 

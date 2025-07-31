@@ -1,4 +1,4 @@
-# 🚀 Getting Started with AI PR Template Generator
+# 🚀 Getting Started with AI PR Writer
 
 Quick setup guide to start using AI-powered PR templates in 5 minutes.
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Generate AI PR Template
         id: ai-pr-template
-        uses: seob717/ai-pr-template-action@v1
+        uses: seob717/ai-pr-writer@v1
         with:
           ai-provider: "groq"
           api-key: ${{ secrets.GROQ_API_KEY }}
@@ -241,8 +241,8 @@ Keep it simple and direct.
 ## 🆘 Need Help?
 
 - 📚 See [Best Practices Guide](BEST_PRACTICES.md) for advanced setup
-- 🐛 [Report issues](https://github.com/seob717/ai-pr-template-action/issues)
-- 💬 [Ask questions](https://github.com/seob717/ai-pr-template-action/discussions)
+- 🐛 [Report issues](https://github.com/seob717/ai-pr-writer/issues)
+- 💬 [Ask questions](https://github.com/seob717/ai-pr-writer/discussions)
 
 ---
 

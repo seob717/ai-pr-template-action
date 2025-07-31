@@ -350,7 +350,7 @@ jobs:
 
       - name: Generate AI PR Template
         id: ai-pr-template
-        uses: seob717/ai-pr-template-action@v1
+        uses: seob717/ai-pr-writer@v1
         with:
           ai-provider: "groq"  # Fast and free
           api-key: ${{ secrets.GROQ_API_KEY }}
@@ -475,4 +475,4 @@ Complete setup examples are available in the [examples/](examples/) folder.
 
 ---
 
-**Need help? Check the [Getting Started Guide](GETTING_STARTED.md) or [open an issue](https://github.com/seob717/ai-pr-template-action/issues).**
+**Need help? Check the [Getting Started Guide](GETTING_STARTED.md) or [open an issue](https://github.com/seob717/ai-pr-writer/issues).**
