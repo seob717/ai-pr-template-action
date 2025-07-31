@@ -29,7 +29,7 @@ inputs:
   template-path:
     description: 'Path to PR templates directory relative to repository root'
     required: false
-    default: '.github/pull_request_templates'
+    default: '.github/ai-pr/templates'
   default-template:
     description: 'Default template to use when auto-selection fails'
     required: false

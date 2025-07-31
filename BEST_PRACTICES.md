@@ -424,7 +424,7 @@ model: 'claude-3-5-sonnet-20241022'
 #### 3. Missing Jira Tickets
 **Problem:** Tickets exist but aren't extracted
 **Check:**
-- Verify regex pattern in `pr-rules.json`
+- Verify regex pattern in `.github/ai-pr/rules.json`
 - Test regex with your actual commit messages
 - Ensure tickets are in commit messages or branch names
 

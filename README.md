@@ -141,7 +141,7 @@ model: "claude-3-5-sonnet-20241022"
 | `ai-provider` | AI provider (`claude`, `openai`, `google`, `vertex-ai`, `groq`) | ❌ | `claude` |
 | `api-key` | API key for the selected provider | ✅ | - |
 | `model` | Specific model name | ❌ | Provider default |
-| `template-path` | Path to templates directory | ❌ | `.github/ai-pr/templates` |
+| `template-path` | Custom path to templates directory | ❌ | `.github/ai-pr/templates` |
 | `github-token` | GitHub token for PR updates | ✅ | `${{ secrets.GITHUB_TOKEN }}` |
 
 ### Outputs
@@ -211,7 +211,7 @@ The action automatically selects templates based on:
 - Branch names: `feature/`, `hotfix/`, `bugfix/`
 - Commit messages: `feat:`, `fix:`, `hotfix:`
 
-**New Clean Structure:**
+**Clean Structure:**
 ```
 .github/ai-pr/
 ├── rules.json      # Extract tickets/info

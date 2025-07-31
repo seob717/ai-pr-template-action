@@ -13,9 +13,7 @@ import {
   DEFAULT_RULES,
   DEFAULT_TEMPLATE_PATTERNS,
   DEFAULT_COMMIT_PATTERNS,
-  FALLBACK_PROMPT,
   OUTPUT_FILENAME,
-  AI_GENERATION_CONFIG,
   ERROR_MESSAGES,
   SUCCESS_MESSAGES
 } from "./defaults.js";
@@ -48,10 +46,11 @@ async function importAISDKs() {
 
 class PRTemplateGenerator {
   constructor() {
-    // Try new structure first, fallback to legacy
-    this.templateDir = this.resolveTemplatePath();
-    this.rulesPath = this.resolveRulesPath();
-    this.systemPromptPath = this.resolveSystemPromptPath();
+    this.templateDir = process.env.TEMPLATE_PATH
+      ? path.join(process.cwd(), process.env.TEMPLATE_PATH)
+      : path.join(process.cwd(), DEFAULT_PATHS.templateDir);
+    this.rulesPath = path.join(process.cwd(), DEFAULT_PATHS.rulesPath);
+    this.systemPromptPath = path.join(process.cwd(), DEFAULT_PATHS.systemPromptPath);
     this.aiProvider = process.env.AI_PROVIDER || DEFAULT_CONFIG.aiProvider;
     this.apiKey = this.getAPIKey();
     this.model = this.getModel();
@@ -69,37 +68,6 @@ class PRTemplateGenerator {
     }
   }
 
-  // Path resolution methods (new structure first, legacy fallback)
-  resolveTemplatePath() {
-    if (process.env.TEMPLATE_PATH) {
-      return path.join(process.cwd(), process.env.TEMPLATE_PATH);
-    }
-    
-    const newPath = path.join(process.cwd(), DEFAULT_PATHS.templateDir);
-    if (fs.existsSync(newPath)) {
-      return newPath;
-    }
-    
-    return path.join(process.cwd(), DEFAULT_PATHS.legacyTemplateDir);
-  }
-
-  resolveRulesPath() {
-    const newPath = path.join(process.cwd(), DEFAULT_PATHS.rulesPath);
-    if (fs.existsSync(newPath)) {
-      return newPath;
-    }
-    
-    return path.join(process.cwd(), DEFAULT_PATHS.legacyRulesPath);
-  }
-
-  resolveSystemPromptPath() {
-    const newPath = path.join(process.cwd(), DEFAULT_PATHS.systemPromptPath);
-    if (fs.existsSync(newPath)) {
-      return newPath;
-    }
-    
-    return path.join(process.cwd(), DEFAULT_PATHS.legacySystemPromptPath);
-  }
 
   // API 키 가져오기 (우선순위: api-key > 개별 키)
   getAPIKey() {

@@ -1,15 +1,9 @@
 // Default configuration and templates for AI PR Template Generator
 
 export const DEFAULT_PATHS = {
-  // New structure paths (ai-pr folder)
   templateDir: ".github/ai-pr/templates",
   rulesPath: ".github/ai-pr/rules.json", 
-  systemPromptPath: ".github/ai-pr/prompt.md",
-  
-  // Legacy paths (backward compatibility)
-  legacyTemplateDir: ".github/pull_request_templates",
-  legacyRulesPath: ".github/pr-rules.json",
-  legacySystemPromptPath: ".github/pr-system-prompt.md"
+  systemPromptPath: ".github/ai-pr/prompt.md"
 };
 
 export const DEFAULT_CONFIG = {
@@ -147,7 +141,7 @@ export const DEFAULT_RULES = {
   }
 };
 
-// Default template selection logic patterns
+// Template selection patterns
 export const DEFAULT_TEMPLATE_PATTERNS = {
   hotfix: ["hotfix"],
   release: ["release"], 
@@ -162,14 +156,7 @@ export const DEFAULT_COMMIT_PATTERNS = {
   release: ["release"]
 };
 
-export const FALLBACK_PROMPT = "Please describe the changes based on the git diff.";
-
 export const OUTPUT_FILENAME = "pr-template-output.md";
-
-export const AI_GENERATION_CONFIG = {
-  maxTokens: 1000,
-  temperature: 0.7
-};
 
 export const ERROR_MESSAGES = {
   noChanges: "변경사항이 없습니다.",
