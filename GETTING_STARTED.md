@@ -35,43 +35,27 @@ Create `.github/workflows/ai-pr-template.yml`:
 name: AI PR Template
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+   pull_request:
+      types: [opened, synchronize]
 
 jobs:
-  generate-template:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+   generate-template:
+      runs-on: ubuntu-latest
+      permissions:
+         contents: read
+         pull-requests: write
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      steps:
+         - name: Checkout
+           uses: actions/checkout@v4
 
-      - name: Generate AI PR Template
-        id: ai-pr-template
-        uses: seob717/ai-pr-writer@v1
-        with:
-          ai-provider: "groq"
-          api-key: ${{ secrets.GROQ_API_KEY }}
-          model: "llama-3.1-70b-versatile"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update PR Body
-        if: steps.ai-pr-template.outputs.content-generated == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const prBody = fs.readFileSync('pr-template-output.md', 'utf8');
-
-            await github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              body: prBody
-            });
+         - name: Generate AI PR Template
+           uses: seob717/ai-pr-writer@v1
+           with:
+              ai-provider: 'groq'
+              api-key: ${{ secrets.GROQ_API_KEY }}
+              model: 'llama-3.3-70b-versatile'
+              github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Step 3: Get Free API Key
