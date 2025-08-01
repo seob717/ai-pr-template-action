@@ -32,14 +32,14 @@ Create `.github/ai-pr/templates/feature.md`:
 Create `.github/workflows/ai-pr-template.yml`:
 
 ```yaml
-name: AI PR Template
+name: AI PR Writer
 
 on:
    pull_request:
       types: [opened, synchronize]
 
 jobs:
-   generate-template:
+   write-template:
       runs-on: ubuntu-latest
       permissions:
          contents: read
@@ -50,7 +50,7 @@ jobs:
            uses: actions/checkout@v4
 
          - name: Generate AI PR Template
-           uses: seob717/ai-pr-writer@v1
+           uses: seob717/ai-pr-writer@latest
            with:
               ai-provider: 'groq'
               api-key: ${{ secrets.GROQ_API_KEY }}
